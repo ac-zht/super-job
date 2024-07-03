@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type CronJob struct {
+type Job struct {
 	Id   int64
 	Name string
 
@@ -18,7 +18,7 @@ type CronJob struct {
 	CancelFunc func()
 }
 
-func (j CronJob) Next(t time.Time) time.Time {
+func (j Job) Next(t time.Time) time.Time {
 	expr := cron.NewParser(cron.Second | cron.Minute |
 		cron.Hour | cron.Dom |
 		cron.Month | cron.Dow |

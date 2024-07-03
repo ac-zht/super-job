@@ -2,28 +2,28 @@ package service
 
 import (
 	"context"
-	"github.com/zht-account/super-job/internal/domain"
-	"github.com/zht-account/super-job/internal/repository"
-	"github.com/zht-account/super-job/pkg/logger"
+	"github.com/zht-account/super-job/scheduler/internal/domain"
+	"github.com/zht-account/super-job/scheduler/internal/repository"
+	"github.com/zht-account/super-job/scheduler/pkg/logger"
 	"time"
 )
 
-//go:generate mockgen -source=./cron_job.go -package=svcmocks -destination=mocks/cron_job.mocks.go CronJobService
-type CronJobService interface {
-	Preempt(ctx context.Context) (domain.CronJob, error)
-	ResetNextTime(ctx context.Context, job domain.CronJob) error
-	AddJob(ctx context.Context, job domain.CronJob) error
+//go:generate mockgen -source=./cron_job.go -package=svcmocks -destination=mocks/cron_job.mocks.go JobService
+type JobService interface {
+	Preempt(ctx context.Context) (domain.Job, error)
+	ResetNextTime(ctx context.Context, job domain.Job) error
+	AddJob(ctx context.Context, job domain.Job) error
 }
 
 type cronJobService struct {
-	repo            repository.CronJobRepository
+	repo            repository.JobRepository
 	l               logger.Logger
 	refreshInterval time.Duration
 }
 
-func NewCronJobService(
-	repo repository.CronJobRepository,
-	l logger.Logger) CronJobService {
+func NenJobService(
+	repo repository.JobRepository,
+	l logger.Logger) JobService {
 	return &cronJobService{
 		repo:            repo,
 		l:               l,
@@ -31,10 +31,10 @@ func NewCronJobService(
 	}
 }
 
-func (c *cronJobService) Preempt(ctx context.Context) (domain.CronJob, error) {
+func (c *cronJobService) Preempt(ctx context.Context) (domain.Job, error) {
 	j, err := c.repo.Preempt(ctx)
 	if err != nil {
-		return domain.CronJob{}, err
+		return domain.Job{}, err
 	}
 	//ch := make(chan struct{})
 	//go func() {
@@ -71,7 +71,7 @@ func (c *cronJobService) Preempt(ctx context.Context) (domain.CronJob, error) {
 	return j, nil
 }
 
-func (c *cronJobService) ResetNextTime(ctx context.Context, job domain.CronJob) error {
+func (c *cronJobService) ResetNextTime(ctx context.Context, job domain.Job) error {
 	t := job.Next(time.Now())
 	if !t.IsZero() {
 		return c.repo.UpdateNextTime(ctx, job.Id, t)
@@ -79,7 +79,7 @@ func (c *cronJobService) ResetNextTime(ctx context.Context, job domain.CronJob) 
 	return nil
 }
 
-func (c *cronJobService) AddJob(ctx context.Context, job domain.CronJob) error {
+func (c *cronJobService) AddJob(ctx context.Context, job domain.Job) error {
 	job.NextTime = job.Next(time.Now())
 	return c.repo.AddJob(ctx, job)
 }
