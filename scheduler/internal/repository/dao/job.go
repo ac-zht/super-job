@@ -78,9 +78,9 @@ func (dao *GORMJobDAO) Insert(ctx context.Context, j Job) error {
 }
 
 type Job struct {
-	Id         int64  `gorm:"primaryKey,autoIncrement"`
+	Id         int64 `gorm:"primaryKey,autoIncrement"`
+	ExecId     int64
 	Name       string `gorm:"type:varchar(256);unique"`
-	Executor   string
 	Cfg        string
 	Expression string
 	Version    int64
