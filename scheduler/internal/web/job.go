@@ -4,13 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/zht-account/gotools/pool"
-	"github.com/zht-account/super-job/scheduler/internal/domain"
-	"github.com/zht-account/super-job/scheduler/internal/errs"
-	"github.com/zht-account/super-job/scheduler/internal/service"
-	"github.com/zht-account/super-job/scheduler/pkg/ginx"
-	"github.com/zht-account/super-job/scheduler/pkg/logger"
-	"net/http"
+	"github.com/zc-zht/gotools/pool"
+	"github.com/zc-zht/super-job/scheduler/internal/service"
+	"github.com/zc-zht/super-job/scheduler/pkg/logger"
 	"time"
 )
 
@@ -32,7 +28,7 @@ func NewScheduler(svc service.JobService, interval, dt time.Duration, qp *pool.O
 	}
 }
 
-func (h *Scheduler) Start(ctx context.Context) error {
+func (h *Scheduler) Start(ctx *gin.Context) error {
 	for {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -47,39 +43,4 @@ func (h *Scheduler) Start(ctx context.Context) error {
 		fmt.Println(j)
 		//放入到线程池
 	}
-}
-
-func (h *Scheduler) RegisterJob(ctx *gin.Context) {
-	type Req struct {
-		Name       string `json:"name"`
-		Executor   string `json:"executor"`
-		Cfg        string `json:"cfg"`
-		Expression string `json:"expression"`
-	}
-	var req Req
-	if err := ctx.Bind(&req); err != nil {
-		return
-	}
-	err := h.svc.AddJob(ctx, domain.Job{
-		Name:       req.Name,
-		Executor:   req.Executor,
-		Cfg:        req.Cfg,
-		Expression: req.Expression,
-	})
-	if err != nil {
-		ctx.JSON(http.StatusOK, ginx.Result{
-			Code: errs.JobInternalServerError,
-			Msg:  "系统异常",
-		})
-		return
-	}
-	ctx.JSON(http.StatusOK, ginx.Result{
-		Msg: "新增成功",
-	})
-	return
-}
-
-func (h *Scheduler) RegisterRoutes(server *gin.Engine) {
-	ug := server.Group("/job")
-	ug.POST("/register", h.RegisterJob)
 }

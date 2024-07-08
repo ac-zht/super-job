@@ -1,7 +1,6 @@
 package web
 
 import (
-	"github.com/ecodeclub/ekit/slice"
 	"github.com/gin-gonic/gin"
 	"github.com/zc-zht/super-job/admin/internal/domain"
 	"github.com/zc-zht/super-job/admin/internal/errs"
@@ -9,20 +8,21 @@ import (
 	"github.com/zc-zht/super-job/admin/pkg/ginx"
 	"github.com/zc-zht/super-job/admin/pkg/logger"
 	"net/http"
+	"strings"
 )
 
-type JobHandler struct {
-	svc service.JobService
+type ExecutorHandler struct {
+	svc service.ExecutorService
 	l   logger.Logger
 }
 
-func NewJobHandler(svc service.JobService) *JobHandler {
-	return &JobHandler{
+func NewExecutorHandler(svc service.ExecutorService) *ExecutorHandler {
+	return &ExecutorHandler{
 		svc: svc,
 	}
 }
 
-func (h *JobHandler) List(ctx *gin.Context) {
+func (h *ExecutorHandler) List(ctx *gin.Context) {
 	type Req struct {
 		Offset int `json:"offset"`
 		Limit  int `json:"limit"`
@@ -40,40 +40,29 @@ func (h *JobHandler) List(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, ginx.Result{
-		Data: slice.Map[domain.Job, JobVo](jobs, func(idx int, src domain.Job) JobVo {
-			return JobVo{
-				Id:       src.Id,
-				Executor: src.Executor.Name,
-				Name:     src.Name,
-				Protocol: src.Protocol.ToUint8(),
-				Cfg:      src.Cfg,
-				NextTime: src.NextTime.UnixMilli(),
-			}
-		}),
+		Data: jobs,
 	})
 	return
 }
 
-func (h *JobHandler) Save(ctx *gin.Context) {
+func (h *ExecutorHandler) Save(ctx *gin.Context) {
 	type Req struct {
-		Id         int64  `json:"id"`
-		Name       string `json:"name"`
-		ExecId     int64  `json:"exec_id"`
-		Protocol   uint8  `json:"protocol"`
-		Cfg        string `json:"cfg"`
-		Expression string `json:"expression"`
+		Id    int64  `json:"id"`
+		Name  string `json:"name"`
+		Hosts string `json:"hosts"`
 	}
 	var req Req
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
-	id, err := h.svc.Save(ctx, domain.Job{
-		Id:         req.Id,
-		Name:       req.Name,
-		ExecId:     req.ExecId,
-		Protocol:   domain.JobProtocol(req.Protocol),
-		Cfg:        req.Cfg,
-		Expression: req.Expression,
+	if req.Name == "" || req.Hosts == "" {
+		ctx.JSON(http.StatusOK, ginx.Result{Code: 1, Msg: "未输入必填项"})
+		return
+	}
+	id, err := h.svc.Save(ctx, domain.Executor{
+		Id:    req.Id,
+		Name:  req.Name,
+		Hosts: strings.Split(req.Hosts, ","),
 	})
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
@@ -89,9 +78,9 @@ func (h *JobHandler) Save(ctx *gin.Context) {
 	return
 }
 
-func (h *JobHandler) Delete(ctx *gin.Context) {
+func (h *ExecutorHandler) Delete(ctx *gin.Context) {
 	type Req struct {
-		Id int `json:"id"`
+		Id int64 `json:"id"`
 	}
 	var req Req
 	if err := ctx.Bind(&req); err != nil {
@@ -111,8 +100,8 @@ func (h *JobHandler) Delete(ctx *gin.Context) {
 	return
 }
 
-func (h *JobHandler) RegisterRoutes(server *gin.Engine) {
-	ug := server.Group("/job")
+func (h *ExecutorHandler) RegisterRoutes(server *gin.Engine) {
+	ug := server.Group("/executor")
 	ug.POST("/list", h.List)
 	ug.POST("/save", h.Save)
 	ug.POST("/delete", h.Delete)

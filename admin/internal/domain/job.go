@@ -15,6 +15,7 @@ type Job struct {
 	//任务下一次的执行时间
 	NextTime time.Time
 
+	Executor   Executor
 	CancelFunc func()
 }
 

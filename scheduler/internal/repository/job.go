@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"github.com/zht-account/super-job/scheduler/internal/domain"
-	"github.com/zht-account/super-job/scheduler/internal/repository/dao"
+	"github.com/zc-zht/super-job/scheduler/internal/domain"
+	"github.com/zc-zht/super-job/scheduler/internal/repository/dao"
 	"time"
 )
 

@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 	"github.com/ecodeclub/ekit/slice"
-	"github.com/zht-account/super-job/admin/internal/domain"
-	"github.com/zht-account/super-job/admin/internal/repository/dao"
+	"github.com/zc-zht/super-job/admin/internal/domain"
+	"github.com/zc-zht/super-job/admin/internal/repository/dao"
 	"time"
 )
 
@@ -13,12 +13,19 @@ var ErrNoMoreJob = dao.ErrNoMoreJob
 //go:generate mockgen -source=./job.go -package=repomocks -destination=mocks/job.mock.go JobRepository
 type JobRepository interface {
 	List(ctx context.Context, offset, limit int) ([]domain.Job, error)
-	Store(ctx context.Context, j domain.Job) error
+	Create(ctx context.Context, j domain.Job) (int64, error)
+	Update(ctx context.Context, job domain.Job) error
 	Delete(ctx context.Context, id int) error
 }
 
 type PreemptJobRepository struct {
 	dao dao.JobDAO
+}
+
+func NewJobRepository(dao dao.JobDAO) JobRepository {
+	return &PreemptJobRepository{
+		dao: dao,
+	}
 }
 
 func (p *PreemptJobRepository) List(ctx context.Context, offset, limit int) ([]domain.Job, error) {
@@ -31,8 +38,12 @@ func (p *PreemptJobRepository) List(ctx context.Context, offset, limit int) ([]d
 	}), nil
 }
 
-func (p *PreemptJobRepository) Store(ctx context.Context, j domain.Job) error {
+func (p *PreemptJobRepository) Create(ctx context.Context, j domain.Job) (int64, error) {
 	return p.dao.Insert(ctx, p.toEntity(j))
+}
+
+func (p *PreemptJobRepository) Update(ctx context.Context, job domain.Job) error {
+	return p.dao.Update(ctx, p.toEntity(job))
 }
 
 func (p *PreemptJobRepository) Delete(ctx context.Context, id int) error {
@@ -52,6 +63,7 @@ func (p *PreemptJobRepository) toEntity(j domain.Job) dao.Job {
 }
 
 func (p *PreemptJobRepository) toDomain(j dao.Job) domain.Job {
+	executor := &executorRepository{}
 	return domain.Job{
 		Id:         j.Id,
 		ExecId:     j.ExecId,
@@ -60,5 +72,6 @@ func (p *PreemptJobRepository) toDomain(j dao.Job) domain.Job {
 		Expression: j.Expression,
 		Cfg:        j.Cfg,
 		NextTime:   time.UnixMilli(j.NextTime),
+		Executor:   executor.toDomain(j.Executor),
 	}
 }

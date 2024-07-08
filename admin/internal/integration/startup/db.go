@@ -1,4 +1,4 @@
-package ioc
+package startup
 
 import (
 	"github.com/zc-zht/super-job/admin/internal/repository/dao"

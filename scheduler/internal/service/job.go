@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"github.com/zht-account/super-job/scheduler/internal/domain"
-	"github.com/zht-account/super-job/scheduler/internal/repository"
-	"github.com/zht-account/super-job/scheduler/pkg/logger"
+	"github.com/zc-zht/super-job/scheduler/internal/domain"
+	"github.com/zc-zht/super-job/scheduler/internal/repository"
+	"github.com/zc-zht/super-job/scheduler/pkg/logger"
 	"time"
 )
 
