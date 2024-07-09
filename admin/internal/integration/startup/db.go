@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func InitDB() *gorm.DB {
+func InitTestDB() *gorm.DB {
 	db, err := gorm.Open(mysql.Open("root:root123@tcp(localhost:3306)/super_job"))
 	if err != nil {
 		panic(err)

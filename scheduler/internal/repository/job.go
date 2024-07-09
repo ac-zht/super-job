@@ -50,7 +50,6 @@ func (p *PreemptJobRepository) toEntity(j domain.Job) dao.Job {
 	return dao.Job{
 		Id:         j.Id,
 		Name:       j.Name,
-		Executor:   j.Executor,
 		Cfg:        j.Cfg,
 		Expression: j.Expression,
 		NextTime:   j.NextTime.UnixMilli(),
@@ -63,7 +62,6 @@ func (p *PreemptJobRepository) toDomain(j dao.Job) domain.Job {
 		Name:       j.Name,
 		Expression: j.Expression,
 		Cfg:        j.Cfg,
-		Executor:   j.Executor,
 		NextTime:   time.UnixMilli(j.NextTime),
 	}
 }
