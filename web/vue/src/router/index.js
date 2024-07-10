@@ -39,15 +39,15 @@ const router = new Router({
       path: '/',
       redirect: '/task'
     },
-    {
-      path: '/install',
-      name: 'install',
-      component: Install,
-      meta: {
-        noLogin: true,
-        noNeedAdmin: true
-      }
-    },
+    // {
+    //   path: '/install',
+    //   name: 'install',
+    //   component: Install,
+    //   meta: {
+    //     noLogin: true,
+    //     noNeedAdmin: true
+    //   }
+    // },
     {
       path: '/task',
       name: 'task-list',

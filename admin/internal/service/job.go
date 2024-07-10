@@ -11,7 +11,7 @@ import (
 type JobService interface {
 	List(ctx context.Context, offset, limit int) ([]domain.Job, error)
 	Save(ctx context.Context, j domain.Job) (int64, error)
-	Delete(ctx context.Context, id int) error
+	Delete(ctx context.Context, id int64) error
 }
 
 type jobService struct {
@@ -46,6 +46,6 @@ func (svc *jobService) update(ctx context.Context, j domain.Job) error {
 	return svc.repo.Update(ctx, j)
 }
 
-func (svc *jobService) Delete(ctx context.Context, id int) error {
+func (svc *jobService) Delete(ctx context.Context, id int64) error {
 	return svc.repo.Delete(ctx, id)
 }

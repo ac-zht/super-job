@@ -102,7 +102,7 @@ func (h *ExecutorHandler) Delete(ctx *gin.Context) {
 
 func (h *ExecutorHandler) RegisterRoutes(server *gin.Engine) {
 	ug := server.Group("/executor")
-	ug.POST("/list", h.List)
+	ug.POST("", h.List)
 	ug.POST("/save", h.Save)
 	ug.POST("/delete", h.Delete)
 }

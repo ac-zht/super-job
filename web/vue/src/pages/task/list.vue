@@ -74,10 +74,10 @@
         <template slot-scope="scope">
           <el-form label-position="left" inline class="demo-table-expand">
             <el-form-item label="任务创建时间:">
-              {{scope.row.created | formatTime}} <br>
+              {{scope.row.ctime | formatTime}} <br>
             </el-form-item>
-            <el-form-item label="任务类型:">
-              {{scope.row.level | formatLevel}} <br>
+            <el-form-item label="创建人:">
+              {{scope.row.creator | formatTime}} <br>
             </el-form-item>
             <el-form-item label="单实例运行:">
                {{scope.row.multi | formatMulti}} <br>
