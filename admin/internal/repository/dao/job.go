@@ -10,6 +10,7 @@ var ErrNoMoreJob = gorm.ErrRecordNotFound
 
 type JobDAO interface {
 	List(ctx context.Context, offset, limit int) ([]Job, error)
+	GetById(ctx context.Context, id int64) (Job, error)
 	Insert(ctx context.Context, j Job) (int64, error)
 	Update(ctx context.Context, j Job) error
 	Delete(ctx context.Context, id int64) error
@@ -35,6 +36,12 @@ func (dao *GORMJobDAO) List(ctx context.Context, offset, limit int) ([]Job, erro
 	return jobs, err
 }
 
+func (dao *GORMJobDAO) GetById(ctx context.Context, id int64) (Job, error) {
+	var job Job
+	err := dao.db.WithContext(ctx).First(&job, id).Error
+	return job, err
+}
+
 func (dao *GORMJobDAO) Delete(ctx context.Context, id int64) error {
 	return dao.db.WithContext(ctx).Where("id = ?", id).Delete(&Job{}).Error
 }
@@ -49,7 +56,7 @@ func (dao *GORMJobDAO) Insert(ctx context.Context, j Job) (int64, error) {
 
 func (dao *GORMJobDAO) Update(ctx context.Context, j Job) error {
 	j.Utime = time.Now().UnixMilli()
-	return dao.db.WithContext(ctx).Updates(&j).Error
+	return dao.db.WithContext(ctx).Model(&Job{}).Updates(&j).Error
 }
 
 type Job struct {

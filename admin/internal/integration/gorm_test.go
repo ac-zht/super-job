@@ -23,12 +23,18 @@ type ExecutorReq struct {
 }
 
 type JobReq struct {
-	Id         int64  `json:"id"`
-	Name       string `json:"name"`
-	ExecId     int64  `json:"exec_id"`
-	Protocol   uint8  `json:"protocol"`
-	Cfg        string `json:"cfg"`
-	Expression string `json:"expression"`
+	Id            int64  `json:"id"`
+	ExecId        int64  `json:"exec_id"`
+	Name          string `json:"name"`
+	Protocol      uint8  `json:"protocol"`
+	Cfg           string `json:"cfg"`
+	Expression    string `json:"expression"`
+	Status        uint8  `json:"status"`
+	Multi         uint8  `json:"multi"`
+	HttpMethod    uint8  `json:"http_method"`
+	Timeout       int64  `json:"timeout"`
+	RetryTimes    int64  `json:"retry_times"`
+	RetryInterval int64  `json:"retry_interval"`
 }
 
 type WebTestSuite struct {
@@ -140,6 +146,26 @@ func (a *WebTestSuite) TestJobHandler_Save() {
 					Ctime: time.Now().UnixMilli(),
 					Utime: time.Now().UnixMilli(),
 				})
+				a.db.Create(&dao.User{
+					Id:      1,
+					Name:    "张三",
+					Email:   "2032754457@qq.com",
+					Salt:    "qaz123",
+					IsAdmin: 1,
+					Status:  1,
+					Ctime:   time.Now().UnixMilli(),
+					Utime:   time.Now().UnixMilli(),
+				})
+				a.db.Create(&dao.User{
+					Id:      2,
+					Name:    "李四",
+					Email:   "2032754455@qq.com",
+					Salt:    "qaz123",
+					IsAdmin: 1,
+					Status:  1,
+					Ctime:   time.Now().UnixMilli(),
+					Utime:   time.Now().UnixMilli(),
+				})
 			},
 			after: func(t *testing.T) {
 				var job dao.Job
@@ -160,11 +186,16 @@ func (a *WebTestSuite) TestJobHandler_Save() {
 				}, job)
 			},
 			req: JobReq{
-				Name:       "job-1",
-				ExecId:     1,
-				Protocol:   2,
-				Cfg:        "this is a test job",
-				Expression: "0 * * * * *",
+				ExecId:        1,
+				Name:          "job-1",
+				Protocol:      2,
+				Cfg:           "this is a test job",
+				Expression:    "0 * * * * *",
+				Status:        1,
+				Multi:         1,
+				Timeout:       10,
+				RetryTimes:    3,
+				RetryInterval: 1,
 			},
 			wantCode: 200,
 			wantResult: Result[int64]{

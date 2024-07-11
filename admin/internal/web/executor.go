@@ -1,6 +1,7 @@
 package web
 
 import (
+	"github.com/ecodeclub/ekit/slice"
 	"github.com/gin-gonic/gin"
 	"github.com/zc-zht/super-job/admin/internal/domain"
 	"github.com/zc-zht/super-job/admin/internal/errs"
@@ -31,7 +32,7 @@ func (h *ExecutorHandler) List(ctx *gin.Context) {
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
-	jobs, err := h.svc.List(ctx, req.Offset, req.Limit)
+	executors, err := h.svc.List(ctx, req.Offset, req.Limit)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: errs.JobInternalServerError,
@@ -40,7 +41,35 @@ func (h *ExecutorHandler) List(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, ginx.Result{
-		Data: jobs,
+		Data: slice.Map[domain.Executor, ExecutorVo](executors, func(idx int, src domain.Executor) ExecutorVo {
+			return ExecutorVo{
+				Id:    src.Id,
+				Name:  src.Name,
+				Hosts: strings.Join(src.Hosts, "_"),
+				Ctime: src.Ctime,
+				Utime: src.Utime,
+			}
+		}),
+	})
+	return
+}
+
+func (h *ExecutorHandler) All(ctx *gin.Context) {
+	executors, err := h.svc.List(ctx, 0, -1)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: errs.JobInternalServerError,
+			Msg:  "系统异常",
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, ginx.Result{
+		Data: slice.Map[domain.Executor, ExecutorBrief](executors, func(idx int, src domain.Executor) ExecutorBrief {
+			return ExecutorBrief{
+				Id:   src.Id,
+				Name: src.Name,
+			}
+		}),
 	})
 	return
 }
@@ -101,8 +130,9 @@ func (h *ExecutorHandler) Delete(ctx *gin.Context) {
 }
 
 func (h *ExecutorHandler) RegisterRoutes(server *gin.Engine) {
-	ug := server.Group("/executor")
-	ug.POST("", h.List)
+	ug := server.Group("/api/executor")
+	ug.GET("", h.List)
+	ug.GET("/all", h.All)
 	ug.POST("/save", h.Save)
 	ug.POST("/delete", h.Delete)
 }

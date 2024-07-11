@@ -13,6 +13,7 @@ var ErrNoMoreJob = dao.ErrNoMoreJob
 //go:generate mockgen -source=./job.go -package=repomocks -destination=mocks/job.mock.go JobRepository
 type JobRepository interface {
 	List(ctx context.Context, offset, limit int) ([]domain.Job, error)
+	GetById(ctx context.Context, id int64) (domain.Job, error)
 	Create(ctx context.Context, j domain.Job) (int64, error)
 	Update(ctx context.Context, job domain.Job) error
 	Delete(ctx context.Context, id int64) error
@@ -48,6 +49,11 @@ func (p *PreemptJobRepository) Update(ctx context.Context, job domain.Job) error
 
 func (p *PreemptJobRepository) Delete(ctx context.Context, id int64) error {
 	return p.dao.Delete(ctx, id)
+}
+
+func (p *PreemptJobRepository) GetById(ctx context.Context, id int64) (domain.Job, error) {
+	job, err := p.dao.GetById(ctx, id)
+	return p.toDomain(job), err
 }
 
 func (p *PreemptJobRepository) toEntity(j domain.Job) dao.Job {

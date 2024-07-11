@@ -9,7 +9,7 @@ export default {
         params: query
       },
       {
-        uri: '/executor'
+        uri: '/executor/all'
       }
     ], callback)
   },
@@ -17,10 +17,10 @@ export default {
   detail(id, callback) {
     httpClient.batchGet([
       {
-        uri: `/task/${id}`
+        uri: `/job/${id}`
       },
       {
-        uri: '/executor'
+        uri: '/executor/all'
       }
     ], callback)
   },

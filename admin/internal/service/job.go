@@ -10,6 +10,7 @@ import (
 //go:generate mockgen -source=./cron_job.go -package=svcmocks -destination=mocks/cron_job.mocks.go JobService
 type JobService interface {
 	List(ctx context.Context, offset, limit int) ([]domain.Job, error)
+	GetById(ctx context.Context, id int64) (domain.Job, error)
 	Save(ctx context.Context, j domain.Job) (int64, error)
 	Delete(ctx context.Context, id int64) error
 }
@@ -27,6 +28,10 @@ func NewJobService(repo repository.JobRepository) JobService {
 
 func (svc *jobService) List(ctx context.Context, offset, limit int) ([]domain.Job, error) {
 	return svc.repo.List(ctx, offset, limit)
+}
+
+func (svc *jobService) GetById(ctx context.Context, id int64) (domain.Job, error) {
+	return svc.repo.GetById(ctx, id)
 }
 
 func (svc *jobService) Save(ctx context.Context, j domain.Job) (int64, error) {

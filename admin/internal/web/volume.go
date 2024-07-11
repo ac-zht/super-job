@@ -15,8 +15,19 @@ type JobVo struct {
 	RetryTimes    int64 `json:"retry_times"`
 	RetryInterval int64 `json:"retry_interval"`
 
-	Creator int64
-	Updater int64
-
+	Ctime    int64 `json:"ctime"`
 	NextTime int64 `json:"next_time"`
+}
+
+type ExecutorVo struct {
+	Id    int64  `json:"id"`
+	Name  string `json:"name"`
+	Hosts string `json:"hosts"`
+	Ctime int64  `json:"ctime"`
+	Utime int64  `json:"utime"`
+}
+
+type ExecutorBrief struct {
+	Id   int64  `json:"id"`
+	Name string `json:"name"`
 }
