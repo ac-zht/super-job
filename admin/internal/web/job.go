@@ -42,20 +42,22 @@ func (h *JobHandler) List(ctx *gin.Context) {
 		"total": 1,
 		"jobs": slice.Map[domain.Job, JobVo](jobs, func(idx int, src domain.Job) JobVo {
 			return JobVo{
-				Id:            src.Id,
-				Executor:      src.Executor.Name,
-				Name:          src.Name,
-				Protocol:      src.Protocol.ToUint8(),
-				Cfg:           src.Cfg,
-				Expression:    src.Expression,
-				Status:        src.Status,
-				Multi:         src.Multi,
-				HttpMethod:    src.HttpMethod.ToUint8(),
-				Timeout:       src.Timeout,
-				RetryTimes:    src.RetryTimes,
-				RetryInterval: src.RetryInterval,
-				NextTime:      src.NextTime.UnixMilli(),
-				Ctime:         src.Ctime,
+				Id:              src.Id,
+				Executor:        src.Executor.Name,
+				Name:            src.Name,
+				Protocol:        src.Protocol.ToUint8(),
+				Cfg:             src.Cfg,
+				Expression:      src.Expression,
+				Status:          src.Status,
+				Multi:           src.Multi,
+				HttpMethod:      src.HttpMethod.ToUint8(),
+				ExecutorHandler: src.ExecutorHandler,
+				Command:         src.Command,
+				Timeout:         src.Timeout,
+				RetryTimes:      src.RetryTimes,
+				RetryInterval:   src.RetryInterval,
+				NextTime:        src.NextTime.UnixMilli(),
+				Ctime:           src.Ctime,
 			}
 		}),
 	}
@@ -66,37 +68,29 @@ func (h *JobHandler) List(ctx *gin.Context) {
 }
 
 func (h *JobHandler) Save(ctx *gin.Context) {
-	type Req struct {
-		Id            int64  `json:"id"`
-		ExecId        int64  `json:"exec_id"`
-		Name          string `json:"name"`
-		Protocol      uint8  `json:"protocol"`
-		Cfg           string `json:"cfg"`
-		Expression    string `json:"expression"`
-		Status        uint8  `json:"status"`
-		Multi         uint8  `json:"multi"`
-		HttpMethod    uint8  `json:"http_method"`
-		Timeout       int64  `json:"timeout"`
-		RetryTimes    int64  `json:"retry_times"`
-		RetryInterval int64  `json:"retry_interval"`
-	}
-	var req Req
+	var req JobEditReq
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
 	id, err := h.svc.Save(ctx, domain.Job{
-		Id:            req.Id,
-		ExecId:        req.ExecId,
-		Name:          req.Name,
-		Protocol:      domain.JobProtocol(req.Protocol),
-		Cfg:           req.Cfg,
-		Expression:    req.Expression,
-		Status:        req.Status,
-		Multi:         req.Multi,
-		HttpMethod:    domain.HttpMethod(req.HttpMethod),
-		Timeout:       req.Timeout,
-		RetryTimes:    req.RetryTimes,
-		RetryInterval: req.RetryInterval,
+		Id:               req.Id,
+		ExecId:           req.ExecId,
+		Name:             req.Name,
+		Cfg:              req.Cfg,
+		Expression:       req.Expression,
+		Status:           req.Status,
+		Multi:            req.Multi,
+		Protocol:         domain.JobProtocol(req.Protocol),
+		HttpMethod:       domain.HttpMethod(req.HttpMethod),
+		ExecutorHandler:  req.ExecutorHandler,
+		Command:          req.Command,
+		Timeout:          req.Timeout,
+		RetryTimes:       req.RetryTimes,
+		RetryInterval:    req.RetryInterval,
+		NotifyStatus:     domain.NotifyStatus(req.NotifyStatus),
+		NotifyType:       domain.NotifyType(req.NotifyType),
+		NotifyReceiverId: req.NotifyReceiverId,
+		NotifyKeyword:    req.NotifyKeyword,
 	})
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
@@ -108,6 +102,49 @@ func (h *JobHandler) Save(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, ginx.Result{
 		Msg:  "新增成功",
 		Data: id,
+	})
+	return
+}
+
+func (h *JobHandler) Detail(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: errs.JobInvalidInput,
+			Msg:  "参数错误",
+		})
+		return
+	}
+	job, err := h.svc.GetById(ctx, id)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: errs.JobInternalServerError,
+			Msg:  "系统异常",
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, ginx.Result{
+		Data: JobDetail{
+			Id:               job.Id,
+			ExecId:           job.ExecId,
+			Name:             job.Name,
+			Cfg:              job.Cfg,
+			Expression:       job.Expression,
+			Protocol:         job.Protocol.ToUint8(),
+			HttpMethod:       job.HttpMethod.ToUint8(),
+			Status:           job.Status,
+			Multi:            job.Multi,
+			ExecutorHandler:  job.ExecutorHandler,
+			Command:          job.Command,
+			Timeout:          job.Timeout,
+			RetryTimes:       job.RetryTimes,
+			RetryInterval:    job.RetryInterval,
+			NotifyStatus:     job.NotifyStatus.ToUint8(),
+			NotifyType:       job.NotifyType.ToUint8(),
+			NotifyReceiverId: job.NotifyReceiverId,
+			NotifyKeyword:    job.NotifyKeyword,
+		},
 	})
 	return
 }
@@ -139,6 +176,7 @@ func (h *JobHandler) Delete(ctx *gin.Context) {
 func (h *JobHandler) RegisterRoutes(server *gin.Engine) {
 	ug := server.Group("/api/job")
 	ug.GET("", h.List)
+	ug.GET("/:id", h.Detail)
 	ug.POST("/save", h.Save)
 	ug.POST("/delete/:id", h.Delete)
 }

@@ -7,8 +7,10 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"github.com/zc-zht/super-job/admin/internal/domain"
 	"github.com/zc-zht/super-job/admin/internal/integration/startup"
 	"github.com/zc-zht/super-job/admin/internal/repository/dao"
+	"github.com/zc-zht/super-job/admin/internal/web"
 	"gorm.io/gorm"
 	"net/http"
 	"net/http/httptest"
@@ -20,21 +22,6 @@ type ExecutorReq struct {
 	Id    int64  `json:"id"`
 	Name  string `json:"name"`
 	Hosts string `json:"hosts"`
-}
-
-type JobReq struct {
-	Id            int64  `json:"id"`
-	ExecId        int64  `json:"exec_id"`
-	Name          string `json:"name"`
-	Protocol      uint8  `json:"protocol"`
-	Cfg           string `json:"cfg"`
-	Expression    string `json:"expression"`
-	Status        uint8  `json:"status"`
-	Multi         uint8  `json:"multi"`
-	HttpMethod    uint8  `json:"http_method"`
-	Timeout       int64  `json:"timeout"`
-	RetryTimes    int64  `json:"retry_times"`
-	RetryInterval int64  `json:"retry_interval"`
 }
 
 type WebTestSuite struct {
@@ -54,6 +41,8 @@ func (a *WebTestSuite) SetupSuite() {
 
 func (a *WebTestSuite) SetupTest() {
 	err := a.db.Exec("TRUNCATE TABLE `jobs`").Error
+	assert.NoError(a.T(), err)
+	err = a.db.Exec("TRUNCATE TABLE `users`").Error
 	assert.NoError(a.T(), err)
 	err = a.db.Exec("SET FOREIGN_KEY_CHECKS=0").Error
 	err = a.db.Exec("TRUNCATE TABLE `executors`").Error
@@ -106,7 +95,7 @@ func (a *WebTestSuite) TestExecutorHandler_Save() {
 			data, err := json.Marshal(tc.req)
 			assert.NoError(t, err)
 			req, err := http.NewRequest(http.MethodPost,
-				"/executor/save", bytes.NewReader(data))
+				"/api/executor/save", bytes.NewReader(data))
 			assert.NoError(t, err)
 			req.Header.Set("Content-Type",
 				"application/json")
@@ -131,7 +120,7 @@ func (a *WebTestSuite) TestJobHandler_Save() {
 		name   string
 		before func(t *testing.T)
 		after  func(t *testing.T)
-		req    JobReq
+		req    web.JobEditReq
 
 		wantCode   int
 		wantResult Result[int64]
@@ -176,26 +165,39 @@ func (a *WebTestSuite) TestJobHandler_Save() {
 				job.Ctime = 0
 				expression := "0 * * * * *"
 				assert.Equal(t, dao.Job{
-					Id:         1,
-					Name:       "job-1",
-					ExecId:     1,
-					Protocol:   2,
-					Cfg:        "this is a test job",
-					Expression: expression,
-					NextTime:   Next(time.Now(), expression).UnixMilli(),
+					Id:               1,
+					Name:             "job-1",
+					ExecId:           1,
+					Cfg:              "this is a test job",
+					Expression:       expression,
+					NextTime:         Next(time.Now(), expression).UnixMilli(),
+					Status:           1,
+					Multi:            0,
+					Protocol:         2,
+					ExecutorHandler:  "jobHandler",
+					Timeout:          10,
+					RetryTimes:       3,
+					RetryInterval:    1,
+					NotifyStatus:     2,
+					NotifyType:       1,
+					NotifyReceiverId: "8",
 				}, job)
 			},
-			req: JobReq{
-				ExecId:        1,
-				Name:          "job-1",
-				Protocol:      2,
-				Cfg:           "this is a test job",
-				Expression:    "0 * * * * *",
-				Status:        1,
-				Multi:         1,
-				Timeout:       10,
-				RetryTimes:    3,
-				RetryInterval: 1,
+			req: web.JobEditReq{
+				Name:             "job-1",
+				ExecId:           1,
+				Cfg:              "this is a test job",
+				Expression:       "0 * * * * *",
+				Status:           domain.JobStatusWaiting,
+				Multi:            domain.SingleInstanceRun,
+				Protocol:         domain.TaskRPC.ToUint8(),
+				ExecutorHandler:  "jobHandler",
+				Timeout:          10,
+				RetryTimes:       3,
+				RetryInterval:    1,
+				NotifyStatus:     domain.OverNotification.ToUint8(),
+				NotifyType:       domain.EmailNotification.ToUint8(),
+				NotifyReceiverId: "8",
 			},
 			wantCode: 200,
 			wantResult: Result[int64]{
@@ -210,7 +212,7 @@ func (a *WebTestSuite) TestJobHandler_Save() {
 			data, err := json.Marshal(tc.req)
 			assert.NoError(t, err)
 			req, err := http.NewRequest(http.MethodPost,
-				"/job/save", bytes.NewReader(data))
+				"/api/job/save", bytes.NewReader(data))
 			assert.NoError(t, err)
 			req.Header.Set("Content-Type",
 				"application/json")

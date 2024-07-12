@@ -231,6 +231,10 @@ export default {
         },
         {
           value: '2',
+          label: 'rpc'
+        },
+        {
+          value: '3',
           label: 'shell'
         }
       ],
@@ -256,12 +260,6 @@ export default {
     this.search()
   },
   filters: {
-    formatLevel(value) {
-      if (value === 1) {
-        return '主任务'
-      }
-      return '子任务'
-    },
     formatTimeout(value) {
       if (value > 0) {
         return value + '秒'

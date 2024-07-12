@@ -56,7 +56,7 @@ func (dao *GORMJobDAO) Insert(ctx context.Context, j Job) (int64, error) {
 
 func (dao *GORMJobDAO) Update(ctx context.Context, j Job) error {
 	j.Utime = time.Now().UnixMilli()
-	return dao.db.WithContext(ctx).Model(&Job{}).Updates(&j).Error
+	return dao.db.WithContext(ctx).Updates(&j).Error
 }
 
 type Job struct {
@@ -64,13 +64,16 @@ type Job struct {
 	ExecId     int64
 	Name       string `gorm:"type:varchar(256);unique"`
 	Cfg        string
-	Expression string
-	Status     uint8 `gorm:"index:status_next_index"`
+	Expression string `gorm:"type:varchar(256)"`
 	//可建next_time和status的联合索引
-	NextTime   int64 `gorm:"index:status_next_index"`
+	NextTime   int64 `gorm:"index:next_status_index"`
+	Status     uint8 `gorm:"index:next_status_index"`
 	Protocol   uint8 `gorm:"tinyint"` // 协议 1:http 2:rpc 3:系统命令
 	HttpMethod uint8 `gorm:"tinyint"`
 	Multi      uint8 //该任务同一时间是否只运行在一个实例上
+	//方法或命令
+	ExecutorHandler string
+	Command         string
 
 	//失败重试策略
 	Timeout       int64
@@ -78,9 +81,9 @@ type Job struct {
 	RetryInterval int64
 
 	//消息通知
-	NotifyStatus     uint8 `gorm:"tinyint"`
-	NotifyType       uint8 `gorm:"tinyint"`
-	NotifyReceiverId int64
+	NotifyStatus     uint8  `gorm:"tinyint"`           // 任务执行结束是否通知 0: 不通知 1: 失败通知 2: 执行结束通知 3: 任务执行结果关键字匹配通知
+	NotifyType       uint8  `gorm:"tinyint"`           // 通知类型 1: 邮件 2: slack 3: webhook
+	NotifyReceiverId string `gorm:"type:varchar(256)"` // 通知接受者ID, setting表主键ID，多个ID逗号分隔
 	NotifyKeyword    string
 
 	Version int64

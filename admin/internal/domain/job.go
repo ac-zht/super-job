@@ -18,9 +18,17 @@ type Job struct {
 	Protocol   JobProtocol
 	HttpMethod HttpMethod
 
+	ExecutorHandler string
+	Command         string
+
 	Timeout       int64
 	RetryTimes    int64
 	RetryInterval int64
+
+	NotifyStatus     NotifyStatus
+	NotifyType       NotifyType
+	NotifyReceiverId string
+	NotifyKeyword    string
 
 	Creator int64
 	Updater int64
@@ -42,7 +50,6 @@ func (j Job) Next(t time.Time) time.Time {
 }
 
 type JobProtocol uint8
-type HttpMethod uint8
 
 const (
 	TaskHTTP  JobProtocol = iota + 1 // HTTP
@@ -50,15 +57,53 @@ const (
 	TaskShell                        // 系统命令
 )
 
+func (t JobProtocol) ToUint8() uint8 {
+	return uint8(t)
+}
+
+type HttpMethod uint8
+
 const (
 	HttpGet HttpMethod = iota + 1
 	HttpPost
 )
 
-func (t JobProtocol) ToUint8() uint8 {
-	return uint8(t)
-}
-
 func (t HttpMethod) ToUint8() uint8 {
 	return uint8(t)
 }
+
+type NotifyStatus uint8
+
+const (
+	NoNotification NotifyStatus = iota
+	FailNotification
+	OverNotification
+	OverKeywordNotification
+)
+
+func (t NotifyStatus) ToUint8() uint8 {
+	return uint8(t)
+}
+
+type NotifyType uint8
+
+const (
+	EmailNotification NotifyType = iota + 1
+	SlackNotification
+	WebhookNotification
+)
+
+func (t NotifyType) ToUint8() uint8 {
+	return uint8(t)
+}
+
+const (
+	SingleInstanceRun uint8 = iota
+	MultiInstanceRun
+)
+
+const (
+	JobStatusForbidden uint8 = iota
+	JobStatusWaiting
+	JobStatusRunning
+)

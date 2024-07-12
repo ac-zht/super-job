@@ -6,79 +6,13 @@
         <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
         <el-breadcrumb-item :to="{ path: '/task' }">任务管理</el-breadcrumb-item>
         <el-breadcrumb-item>编辑</el-breadcrumb-item>
-     </el-breadcrumb>
+      </el-breadcrumb>
       <el-form ref="form" class="page-form" :model="form" :rules="formRules" label-width="180px">
         <el-input v-model="form.id" type="hidden"></el-input>
         <el-row>
           <el-col :span="15">
             <el-form-item label="任务名称" prop="name">
               <el-input v-model.trim="form.name"></el-input>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="5">
-            <el-form-item label="任务类型">
-              <span slot="label">
-                任务类型
-                <el-tooltip placement="top">
-                  <div slot="content">
-                    主任务可以配置多个子任务,
-                    当主任务执行完成后，自动执行子任务，任务类型新增后不能变更
-                  </div>
-                  <i class="el-icon-question"></i>
-                </el-tooltip>
-              </span>
-              <el-select v-model.trim="form.level" :disabled="form.id !== ''">
-                <el-option
-                  v-for="item in levelList"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                >
-                </el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="5" v-if="form.level === 1">
-            <el-form-item label="依赖关系">
-              <span slot="label">
-                依赖关系
-                <el-tooltip placement="top">
-                  <div slot="content">
-                    强依赖: 主任务执行成功，才会运行子任务<br />
-                    弱依赖: 无论主任务执行是否成功，都会运行子任务
-                  </div>
-                  <i class="el-icon-question"></i>
-                </el-tooltip>
-              </span>
-              <el-select v-model.trim="form.dependency_status">
-                <el-option
-                  v-for="item in dependencyStatusList"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                >
-                </el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="5">
-            <el-form-item label="标签">
-              <el-input
-                v-model.trim="form.tag"
-                placeholder="通过标签将任务分组"
-              ></el-input>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="15">
-            <el-form-item label="子任务ID" v-if="form.level === 1">
-              <el-input
-                v-model.trim="form.dependency_task_id"
-                placeholder="多个ID逗号分隔"
-              ></el-input>
             </el-form-item>
           </el-col>
         </el-row>
@@ -92,15 +26,16 @@
               v-for="(item, index) in specOptions"
               :key="index"
               @click="specSelect(item.value)"
-              >{{ item.label }}</el-button
+            >{{ item.label }}
+            </el-button
             >
           </el-col>
         </el-row>
-        <el-row v-if="form.level === 1">
+        <el-row>
           <el-col :span="15">
-            <el-form-item label="crontab表达式" prop="spec">
+            <el-form-item label="crontab表达式" prop="expression">
               <el-input
-                v-model.trim="form.spec"
+                v-model.trim="form.expression"
                 placeholder="秒 分 时 天 月 周"
               ></el-input>
             </el-form-item>
@@ -135,19 +70,14 @@
               </el-select>
             </el-form-item>
           </el-col>
-           <el-col :span="8" v-else>
-            <el-form-item label="任务节点">
-              <el-select
-                key="shell"
-                v-model="selectedHosts"
-                filterable
-                multiple
-                placeholder="请选择"
-              >
+          <el-col :span="8" v-else>
+            <el-form-item label="执行器">
+              <el-select v-model.trim="form.exec_id">
+                <el-option label="请选择" value=""></el-option>
                 <el-option
-                  v-for="item in hosts"
+                  v-for="item in executors"
                   :key="item.id"
-                  :label="item.alias + ' - ' + item.name"
+                  :label="item.name"
                   :value="item.id"
                 >
                 </el-option>
@@ -182,7 +112,12 @@
           </el-col>
         </el-row>
         <el-row>
-          <el-col :span="15">
+          <el-col :span="8" v-if="form.protocol === 2">
+            <el-form-item label="JobHandler" prop="executor_handler">
+              <el-input v-model.trim="form.executor_handler"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :span="15" v-else>
             <el-form-item label="命令" prop="command">
               <el-input
                 type="textarea"
@@ -190,8 +125,7 @@
                 size="medium"
                 width="100"
                 :placeholder="commandPlaceholder"
-                v-model="form.command"
-              >
+                v-model="form.command">
               </el-input>
             </el-form-item>
           </el-col>
@@ -233,12 +167,20 @@
         <el-row>
           <el-col :span="15">
             <el-form-item label="状态">
+            <span slot="label">
+                状态
+                <el-tooltip placement="top">
+                  <div slot="content">
+                    开关禁用表示任务正在执行
+                  </div>
+                  <i class="el-icon-question"></i>
+                </el-tooltip>
+              </span>
               <el-switch
-                v-model="form.status"
+                v-model="logic.status"
                 :active-value="1"
                 :inactive-vlaue="0"
-                active-color="#13ce66"
-                inactive-color="#ff4949"
+                :disabled="form.status===2"
               >
               </el-switch>
             </el-form-item>
@@ -258,7 +200,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8" v-if="form.notify_status !== 1">
+          <el-col :span="8" v-if="form.notify_status !== 0">
             <el-form-item label="通知类型">
               <el-select v-model.trim="form.notify_type">
                 <el-option
@@ -273,7 +215,7 @@
           </el-col>
           <el-col
             :span="8"
-            v-if="form.notify_status !== 1 && form.notify_type === 2"
+            v-if="form.notify_status !== 0 && form.notify_type === 1"
           >
             <el-form-item label="接收用户">
               <el-select
@@ -296,7 +238,7 @@
 
           <el-col
             :span="8"
-            v-if="form.notify_status !== 1 && form.notify_type === 3"
+            v-if="form.notify_status !== 0 && form.notify_type === 2"
           >
             <el-form-item label="发送Channel">
               <el-select
@@ -318,7 +260,7 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row v-if="form.notify_status === 4">
+        <el-row v-if="form.notify_status === 3">
           <el-col :span="15">
             <el-form-item label="任务执行输出关键字" prop="notify_keyword">
               <el-input
@@ -336,7 +278,7 @@
                 :rows="3"
                 size="medium"
                 width="100"
-                v-model="form.remark"
+                v-model="form.cfg"
               >
               </el-input>
             </el-form-item>
@@ -358,37 +300,40 @@ import notificationService from '../../api/notification'
 
 export default {
   name: 'task-edit',
-  data () {
+  data() {
     return {
+      logic: {
+        status: 0
+      },
       form: {
         id: '',
         name: '',
-        tag: '',
-        level: 1,
-        dependency_status: 1,
-        dependency_task_id: '',
-        spec: '',
+        expression: '',
         protocol: 2,
         http_method: 1,
+        executor_handler: '',
         command: '',
-        host_id: '',
+        exec_id: '',
         timeout: 0,
         multi: 2,
-        notify_status: 1,
-        notify_type: 2,
+        notify_status: 0,
+        notify_type: 1,
         notify_receiver_id: '',
         notify_keyword: '',
         retry_times: 0,
         retry_interval: 0,
         status: 1,
-        remark: ''
+        cfg: ''
       },
       formRules: {
         name: [
           {required: true, message: '请输入任务名称', trigger: 'blur'}
         ],
-        spec: [
+        expression: [
           {required: true, message: '请输入crontab表达式', trigger: 'blur'}
+        ],
+        executor_handler: [
+          {required: true, message: '请输入方法', trigger: 'blur'}
         ],
         command: [
           {required: true, message: '请输入命令', trigger: 'blur'}
@@ -442,75 +387,58 @@ export default {
         },
         {
           value: 2,
+          label: 'rpc'
+        },
+        {
+          value: 3,
           label: 'shell'
-        }
-      ],
-      levelList: [
-        {
-          value: 1,
-          label: '主任务'
-        },
-        {
-          value: 2,
-          label: '子任务'
-        }
-      ],
-      dependencyStatusList: [
-        {
-          value: 1,
-          label: '强依赖'
-        },
-        {
-          value: 2,
-          label: '弱依赖'
         }
       ],
       runStatusList: [
         {
-          value: 2,
+          value: 1,
           label: '是'
         },
         {
-          value: 1,
+          value: 0,
           label: '否'
         }
       ],
       notifyStatusList: [
         {
-          value: 1,
+          value: 0,
           label: '不通知'
         },
         {
-          value: 2,
+          value: 1,
           label: '失败通知'
         },
         {
-          value: 3,
+          value: 2,
           label: '总是通知'
         },
         {
-          value: 4,
+          value: 3,
           label: '关键字匹配通知'
         }
       ],
       notifyTypes: [
         {
-          value: 2,
+          value: 1,
           label: '邮件'
         },
         {
-          value: 3,
+          value: 2,
           label: 'Slack'
         },
         {
-          value: 4,
+          value: 3,
           label: 'WebHook'
         }
       ],
-      hosts: [],
+      executors: [],
       mailUsers: [],
       slackChannels: [],
-      selectedHosts: [],
       selectedMailNotifyIds: [],
       selectedSlackNotifyIds: [],
       specOptions: [
@@ -542,68 +470,62 @@ export default {
     }
   },
   computed: {
-    commandPlaceholder () {
+    commandPlaceholder() {
       if (this.form.protocol === 1) {
         return '请输入URL地址'
       }
-
-      return '请输入shell命令'
+      if (this.form.protocol === 3) {
+        return '请输入shell命令'
+      }
+      // return '请输入shell命令'
     }
   },
   components: {taskSidebar},
-  created () {
+  created() {
     const id = this.$route.params.id
 
-    taskService.detail(id, (taskData, hosts) => {
+    taskService.detail(id, (taskData, executors) => {
       if (id && !taskData) {
         this.$message.error('数据不存在')
         this.cancel()
         return
       }
-      this.hosts = hosts || []
+      this.executors = executors || []
       if (!taskData) {
         return
       }
       this.form.id = taskData.id
       this.form.name = taskData.name
-      this.form.tag = taskData.tag
-      this.form.level = taskData.level
-      if (taskData.dependency_status) {
-        this.form.dependency_status = taskData.dependency_status
-      }
-      this.form.dependency_task_id = taskData.dependency_task_id
-      this.form.spec = taskData.spec
+      this.form.expression = taskData.expression
       this.form.protocol = taskData.protocol
+      if (this.form.protocol === 2) {
+        this.form.exec_id = taskData.exec_id
+        this.form.executor_handler = taskData.executor_handler
+      } else {
+        this.form.command = taskData.command
+      }
       if (taskData.http_method) {
         this.form.http_method = taskData.http_method
       }
-      this.form.command = taskData.command
       this.form.timeout = taskData.timeout
-      this.form.multi = taskData.multi ? 1 : 2
+      this.form.multi = taskData.multi ? 1 : 0
       this.form.notify_keyword = taskData.notify_keyword
-      this.form.notify_status = taskData.notify_status + 1
+      this.form.notify_status = taskData.notify_status
       this.form.status = taskData.status
+      this.logic.status = (taskData.status > 0) ? 1 : 0
       this.form.notify_receiver_id = taskData.notify_receiver_id
-      if (taskData.notify_type) {
-        this.form.notify_type = taskData.notify_type + 1
-      }
+      this.form.notify_type = taskData.notify_type
       this.form.retry_times = taskData.retry_times
       this.form.retry_interval = taskData.retry_interval
-      this.form.remark = taskData.remark
-      taskData.hosts = taskData.hosts || []
-      if (this.form.protocol === 2) {
-        taskData.hosts.forEach((v) => {
-          this.selectedHosts.push(v.host_id)
-        })
-      }
+      this.form.cfg = taskData.cfg
 
-      if (this.form.notify_status > 1) {
+      if (this.form.notify_status > 0) {
         const notifyReceiverIds = this.form.notify_receiver_id.split(',')
-        if (this.form.notify_type === 2) {
+        if (this.form.notify_type === 1) {
           notifyReceiverIds.forEach((v) => {
             this.selectedMailNotifyIds.push(parseInt(v))
           })
-        } else if (this.form.notify_type === 3) {
+        } else if (this.form.notify_type === 2) {
           notifyReceiverIds.forEach((v) => {
             this.selectedSlackNotifyIds.push(parseInt(v))
           })
@@ -620,25 +542,21 @@ export default {
     })
   },
   methods: {
-    submit () {
+    submit() {
       this.$refs['form'].validate((valid) => {
         if (!valid) {
           return false
         }
-        if (this.form.protocol === 2 && this.selectedHosts.length === 0) {
-          this.$message.error('请选择任务节点')
-          return false
-        }
-        if (this.form.notify_status > 1) {
+        if (this.form.notify_status > 0) {
           if (
-            this.form.notify_type === 2 &&
+            this.form.notify_type === 1 &&
             this.selectedMailNotifyIds.length === 0
           ) {
             this.$message.error('请选择邮件接收用户')
             return false
           }
           if (
-            this.form.notify_type === 3 &&
+            this.form.notify_type === 2 &&
             this.selectedSlackNotifyIds.length === 0
           ) {
             this.$message.error('请选择Slack Channel')
@@ -649,28 +567,25 @@ export default {
         this.save()
       })
     },
-    save () {
-      if (this.form.protocol === 2 && this.selectedHosts.length > 0) {
-        this.form.host_id = this.selectedHosts.join(',')
-      }
-      if (this.form.notify_status > 1 && this.form.notify_type === 2) {
+    save() {
+      if (this.form.notify_status > 0 && this.form.notify_type === 1) {
         this.form.notify_receiver_id = this.selectedMailNotifyIds.join(',')
       }
-      if (this.form.notify_status > 1 && this.form.notify_type === 3) {
+      if (this.form.notify_status > 0 && this.form.notify_type === 2) {
         this.form.notify_receiver_id = this.selectedSlackNotifyIds.join(',')
       }
-
-      this.form.status = this.form.status ? 1 : 0
-
+      if (this.form.status !== 2) {
+        this.form.status = this.logic.status
+      }
       taskService.update(this.form, () => {
         this.$router.push('/task')
       })
     },
-    cancel () {
+    cancel() {
       this.$router.push('/task')
     },
-    specSelect (spec) {
-      this.form.spec = spec
+    specSelect(expression) {
+      this.form.expression = expression
     }
   }
 }

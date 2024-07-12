@@ -2,7 +2,6 @@ import axios from 'axios'
 import {Message} from 'element-ui'
 import router from '../router/index'
 import store from '../store/index'
-import Qs from 'qs'
 
 const errorMessage = '加载失败, 请稍后再试'
 // 成功状态码
@@ -107,10 +106,10 @@ export default {
   },
 
   post (uri, data, next) {
-    const promise = axios.post(uri, Qs.stringify(data), {
+    const promise = axios.post(uri, JSON.stringify(data), {
       headers: {
         post: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Content-Type': 'application/json; charset=UTF-8'
         }
       }
     })
