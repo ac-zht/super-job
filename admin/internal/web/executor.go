@@ -35,7 +35,7 @@ func (h *ExecutorHandler) List(ctx *gin.Context) {
 	executors, err := h.svc.List(ctx, req.Offset, req.Limit)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
-			Code: errs.JobInternalServerError,
+			Code: errs.ExecutorInternalServerError,
 			Msg:  "系统异常",
 		})
 		return
@@ -58,7 +58,7 @@ func (h *ExecutorHandler) All(ctx *gin.Context) {
 	executors, err := h.svc.List(ctx, 0, -1)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
-			Code: errs.JobInternalServerError,
+			Code: errs.ExecutorInternalServerError,
 			Msg:  "系统异常",
 		})
 		return
@@ -85,7 +85,10 @@ func (h *ExecutorHandler) Save(ctx *gin.Context) {
 		return
 	}
 	if req.Name == "" || req.Hosts == "" {
-		ctx.JSON(http.StatusOK, ginx.Result{Code: 1, Msg: "未输入必填项"})
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: errs.ExecutorRequiredNotInput,
+			Msg:  "未输入必填项",
+		})
 		return
 	}
 	id, err := h.svc.Save(ctx, domain.Executor{
@@ -95,7 +98,7 @@ func (h *ExecutorHandler) Save(ctx *gin.Context) {
 	})
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
-			Code: errs.JobInternalServerError,
+			Code: errs.ExecutorInternalServerError,
 			Msg:  "系统异常",
 		})
 		return
@@ -118,7 +121,7 @@ func (h *ExecutorHandler) Delete(ctx *gin.Context) {
 	err := h.svc.Delete(ctx, req.Id)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
-			Code: errs.JobInternalServerError,
+			Code: errs.ExecutorInternalServerError,
 			Msg:  "系统异常",
 		})
 		return
