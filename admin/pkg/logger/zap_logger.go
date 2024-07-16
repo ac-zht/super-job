@@ -22,6 +22,10 @@ func (z *ZapLogger) Error(msg string, args ...Field) {
 	z.logger.Error(msg, z.toArgs(args)...)
 }
 
+func (z *ZapLogger) Fatal(msg string, args ...Field) {
+	z.logger.Fatal(msg, z.toArgs(args)...)
+}
+
 func (z *ZapLogger) With(args ...Field) Logger {
 	l := z.logger.With(z.toArgs(args)...)
 	return NewZapLogger(l)

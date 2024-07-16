@@ -12,12 +12,27 @@ type SettingRepository interface {
 	InitBasicField(ctx context.Context) error
 	Mail(ctx context.Context) (domain.Mail, error)
 	Slack(ctx context.Context) (domain.Slack, error)
-	WebHook(ctx context.Context) (domain.WebHook, error)
+	Webhook(ctx context.Context) (domain.Webhook, error)
+
+	UpdateMail(ctx context.Context, mail domain.Mail) (int64, error)
+	UpdateSlack(ctx context.Context, slack domain.Slack) (int64, error)
+	UpdateWebhook(ctx context.Context, webhook domain.Webhook) (int64, error)
+
+	CreateMailUser(ctx context.Context, mailUser domain.MailUser) (int64, error)
+	RemoveMailUser(ctx context.Context, id int64) error
+
+	CreateChannel(ctx context.Context, channel domain.Channel) (int64, error)
+	RemoveChannel(ctx context.Context, id int64) error
 }
 
 type settingRepository struct {
 	dao       dao.SettingDAO
 	BasicRows int64
+}
+
+func (repo *settingRepository) UpdateMail(ctx context.Context, mail domain.Mail) (int64, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func NewSettingRepository(dao dao.SettingDAO) SettingRepository {
@@ -131,12 +146,12 @@ func (repo *settingRepository) Slack(ctx context.Context) (domain.Slack, error) 
 	return slack, nil
 }
 
-func (repo *settingRepository) WebHook(ctx context.Context) (domain.WebHook, error) {
+func (repo *settingRepository) Webhook(ctx context.Context) (domain.Webhook, error) {
 	list, err := repo.dao.FindByKey(ctx, domain.WebhookCode)
 	if err != nil {
-		return domain.WebHook{}, err
+		return domain.Webhook{}, err
 	}
-	var webhook domain.WebHook
+	var webhook domain.Webhook
 	for _, v := range list {
 		switch v.Key {
 		case domain.WebTemplateKey:
@@ -146,4 +161,45 @@ func (repo *settingRepository) WebHook(ctx context.Context) (domain.WebHook, err
 		}
 	}
 	return webhook, nil
+}
+
+func (repo *settingRepository) UpdateSlack(ctx context.Context, slack domain.Slack) (int64, error) {
+	var setting dao.Setting
+	setting.Code = domain.SlackCode
+	setting.Key = domain.SlackUrlKey
+	id, err := repo.dao.Update(ctx, setting)
+	if err != nil {
+		return id, err
+	}
+	setting.Key = domain.SlackTemplateKey
+	id, err = repo.dao.Update(ctx, setting)
+	if err != nil {
+		return id, err
+	}
+	return id, nil
+}
+
+func (repo *settingRepository) UpdateWebhook(ctx context.Context, webhook domain.Webhook) (int64, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (repo *settingRepository) CreateMailUser(ctx context.Context, mailUser domain.MailUser) (int64, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (repo *settingRepository) RemoveMailUser(ctx context.Context, id int64) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (repo *settingRepository) CreateChannel(ctx context.Context, channel domain.Channel) (int64, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (repo *settingRepository) RemoveChannel(ctx context.Context, id int64) error {
+	//TODO implement me
+	panic("implement me")
 }

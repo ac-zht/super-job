@@ -7,14 +7,12 @@ import (
 	"github.com/zc-zht/super-job/admin/internal/errs"
 	"github.com/zc-zht/super-job/admin/internal/service"
 	"github.com/zc-zht/super-job/admin/pkg/ginx"
-	"github.com/zc-zht/super-job/admin/pkg/logger"
 	"net/http"
 	"strings"
 )
 
 type ExecutorHandler struct {
 	svc service.ExecutorService
-	l   logger.Logger
 }
 
 func NewExecutorHandler(svc service.ExecutorService) *ExecutorHandler {

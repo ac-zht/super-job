@@ -7,9 +7,9 @@ import (
 )
 
 type SettingDAO interface {
-	FindByKey(ctx context.Context, key string) ([]Setting, error)
-	Insert(ctx context.Context, set Setting) (id int64, err error)
-	UpDate(ctx context.Context, set Setting) error
+	FindByKey(ctx context.Context, code string) ([]Setting, error)
+	Insert(ctx context.Context, setting Setting) (id int64, err error)
+	Update(ctx context.Context, setting Setting) (int64, error)
 	Delete(ctx context.Context, id int64) error
 }
 
@@ -17,31 +17,30 @@ type GORMSettingDAO struct {
 	db *gorm.DB
 }
 
-func NewGORMSettingDAO(db *gorm.DB) SettingDAO {
+func NewSettingDAO(db *gorm.DB) SettingDAO {
 	return &GORMSettingDAO{
 		db: db,
 	}
 }
 
-func (dao *GORMSettingDAO) FindByKey(ctx context.Context, key string) ([]Setting, error) {
+func (dao *GORMSettingDAO) FindByKey(ctx context.Context, code string) ([]Setting, error) {
 	var settings []Setting
-	err := dao.db.WithContext(ctx).
-		Where("key = ?", key).
-		Find(&settings).Error
+	err := dao.db.WithContext(ctx).Where("code = ?", code).Find(&settings).Error
 	return settings, err
 }
 
-func (dao *GORMSettingDAO) Insert(ctx context.Context, set Setting) (int64, error) {
+func (dao *GORMSettingDAO) Insert(ctx context.Context, setting Setting) (int64, error) {
 	now := time.Now().UnixMilli()
-	set.Ctime = now
-	set.Utime = now
-	err := dao.db.WithContext(ctx).Create(&set).Error
-	return set.Id, err
+	setting.Ctime = now
+	setting.Utime = now
+	err := dao.db.WithContext(ctx).Create(&setting).Error
+	return setting.Id, err
 }
 
-func (dao *GORMSettingDAO) UpDate(ctx context.Context, set Setting) error {
-	set.Utime = time.Now().UnixMilli()
-	return dao.db.WithContext(ctx).Updates(&set).Error
+func (dao *GORMSettingDAO) Update(ctx context.Context, setting Setting) (int64, error) {
+	setting.Utime = time.Now().UnixMilli()
+	err := dao.db.WithContext(ctx).Updates(&setting).Error
+	return setting.Id, err
 }
 
 func (dao *GORMSettingDAO) Delete(ctx context.Context, id int64) error {

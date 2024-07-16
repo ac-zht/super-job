@@ -18,15 +18,21 @@ func InitWeb() *gin.Engine {
 
 		dao.NewExecutorDAO,
 		dao.NewJobDAO,
+		dao.NewSettingDAO,
 
 		repository.NewExecutorRepository,
 		repository.NewJobRepository,
+		repository.NewSettingRepository,
 
 		service.NewExecutorService,
 		service.NewJobService,
+		service.NewSettingService,
+		service.NewInstallService,
 
 		web.NewExecutorHandler,
 		web.NewJobHandler,
+		web.NewSettingHandler,
+		web.NewInstallHandler,
 
 		ioc.InitWebServer,
 	)

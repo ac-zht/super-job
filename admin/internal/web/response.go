@@ -10,7 +10,7 @@ type JobVo struct {
 	Multi      uint8  `json:"multi"`
 
 	Protocol        uint8  `json:"protocol"`
-	HttpMethod      uint8  `json:"httpMethod"`
+	HttpMethod      uint8  `json:"http_method"`
 	ExecutorHandler string `json:"executor_handler"`
 	Command         string `json:"command"`
 

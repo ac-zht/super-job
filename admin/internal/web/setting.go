@@ -12,6 +12,12 @@ type SettingHandler struct {
 	svc service.SettingService
 }
 
+func NewSettingHandler(svc service.SettingService) *SettingHandler {
+	return &SettingHandler{
+		svc: svc,
+	}
+}
+
 func (h *SettingHandler) Mail(ctx *gin.Context) {
 	mail, err := h.svc.Mail(ctx)
 	if err != nil {
@@ -24,6 +30,18 @@ func (h *SettingHandler) Mail(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, ginx.Result{
 		Data: mail,
 	})
+}
+
+func (h *SettingHandler) UpdateMail(ctx *gin.Context) {
+
+}
+
+func (h *SettingHandler) CreateMailUser(ctx *gin.Context) {
+
+}
+
+func (h *SettingHandler) RemoveMailUser(ctx *gin.Context) {
+
 }
 
 func (h *SettingHandler) Slack(ctx *gin.Context) {
@@ -58,6 +76,9 @@ func (h *SettingHandler) RegisterRoutes(server *gin.Engine) {
 	ug := server.Group("api/system")
 	mail := ug.Group("/mail")
 	mail.GET("", h.Mail)
+	mail.POST("/update", h.UpdateMail)
+	mail.POST("/user", h.CreateMailUser)
+	mail.POST("/user/remove/:id", h.RemoveMailUser)
 	slack := ug.Group("/slack")
 	slack.GET("", h.Slack)
 	webhook := ug.Group("/webhook")

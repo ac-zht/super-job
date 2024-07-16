@@ -288,13 +288,15 @@ export default {
       }
     },
     formatProtocol(row, col) {
-      if (row[col.property] === 2) {
-        return 'shell'
+      if (row[col.property] === 1) {
+        if (row.http_method === 1) {
+          return 'http-get'
+        }
+        return 'http-post'
+      } else if (row[col.property] === 2) {
+        return 'rpc'
       }
-      if (row.http_method === 1) {
-        return 'http-get'
-      }
-      return 'http-post'
+      return 'shell'
     },
     changePage(page) {
       this.searchParams.page = page

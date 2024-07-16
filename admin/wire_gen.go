@@ -27,6 +27,12 @@ func InitWeb() *gin.Engine {
 	executorRepository := repository.NewExecutorRepository(executorDAO)
 	executorService := service.NewExecutorService(executorRepository)
 	executorHandler := web.NewExecutorHandler(executorService)
-	engine := ioc.InitWebServer(jobHandler, executorHandler)
+	settingDAO := dao.NewSettingDAO(db)
+	settingRepository := repository.NewSettingRepository(settingDAO)
+	settingService := service.NewSettingService(settingRepository)
+	settingHandler := web.NewSettingHandler(settingService)
+	installService := service.NewInstallService(settingRepository)
+	installHandler := web.NewInstallHandler(installService)
+	engine := ioc.InitWebServer(jobHandler, executorHandler, settingHandler, installHandler)
 	return engine
 }

@@ -14,6 +14,12 @@ type installService struct {
 	settingRepo repository.SettingRepository
 }
 
+func NewInstallService(setRepo repository.SettingRepository) InstallService {
+	return &installService{
+		settingRepo: setRepo,
+	}
+}
+
 func (svc *installService) Store(ctx context.Context) error {
 	err := svc.settingRepo.InitBasicField(ctx)
 	if err != nil {

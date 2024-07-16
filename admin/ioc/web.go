@@ -6,9 +6,13 @@ import (
 )
 
 func InitWebServer(jobHandler *web.JobHandler,
-	executorHandler *web.ExecutorHandler) *gin.Engine {
+	executorHandler *web.ExecutorHandler,
+	settingHandler *web.SettingHandler,
+	installHandler *web.InstallHandler) *gin.Engine {
 	server := gin.Default()
 	jobHandler.RegisterRoutes(server)
 	executorHandler.RegisterRoutes(server)
+	settingHandler.RegisterRoutes(server)
+	installHandler.RegisterRoutes(server)
 	return server
 }

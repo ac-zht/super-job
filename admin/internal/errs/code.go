@@ -12,4 +12,5 @@ const (
 	SettingInvalidInput        = 12001
 
 	InstallInternalServerError = 13000
+	InstallOccurred            = 13001
 )

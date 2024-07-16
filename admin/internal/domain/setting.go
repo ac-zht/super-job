@@ -1,34 +1,34 @@
 package domain
 
 type Mail struct {
-	Host      string
-	Port      int
-	User      string
-	Password  string
-	MailUsers []MailUser
-	Template  string
+	Host      string     `json:"host"`
+	Port      int        `json:"port"`
+	User      string     `json:"user"`
+	Password  string     `json:"password"`
+	MailUsers []MailUser `json:"mail_users"`
+	Template  string     `json:"template"`
 }
 
 type MailUser struct {
-	Id       int64
-	Username string
-	Email    string
+	Id       int64  `json:"id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
 }
 
 type Slack struct {
-	Url      string
-	Channels []Channel
-	Template string
+	Url      string    `json:"url"`
+	Channels []Channel `json:"channels"`
+	Template string    `json:"template"`
 }
 
 type Channel struct {
-	Id   int64
-	Name string
+	Id   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
-type WebHook struct {
-	Url      string
-	Template string
+type Webhook struct {
+	Url      string `json:"url"`
+	Template string `json:"template"`
 }
 
 const (

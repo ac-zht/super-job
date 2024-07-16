@@ -15,6 +15,8 @@ func (n *NoOpLogger) Warn(msg string, args ...Field) {}
 
 func (n *NoOpLogger) Error(msg string, args ...Field) {}
 
+func (n *NoOpLogger) Fatal(msg string, args ...Field) {}
+
 func (n *NoOpLogger) With(args ...Field) Logger {
 	return n
 }
