@@ -14,9 +14,9 @@ type SettingRepository interface {
 	Slack(ctx context.Context) (domain.Slack, error)
 	Webhook(ctx context.Context) (domain.Webhook, error)
 
-	UpdateMail(ctx context.Context, mail domain.Mail) (int64, error)
-	UpdateSlack(ctx context.Context, slack domain.Slack) (int64, error)
-	UpdateWebhook(ctx context.Context, webhook domain.Webhook) (int64, error)
+	UpdateMail(ctx context.Context, mailServer domain.MailServer, template string) error
+	UpdateSlack(ctx context.Context, slack domain.Slack) error
+	UpdateWebhook(ctx context.Context, webhook domain.Webhook) error
 
 	CreateMailUser(ctx context.Context, mailUser domain.MailUser) (int64, error)
 	RemoveMailUser(ctx context.Context, id int64) error
@@ -28,11 +28,6 @@ type SettingRepository interface {
 type settingRepository struct {
 	dao       dao.SettingDAO
 	BasicRows int64
-}
-
-func (repo *settingRepository) UpdateMail(ctx context.Context, mail domain.Mail) (int64, error) {
-	//TODO implement me
-	panic("implement me")
 }
 
 func NewSettingRepository(dao dao.SettingDAO) SettingRepository {
@@ -116,6 +111,7 @@ func (repo *settingRepository) Mail(ctx context.Context) (domain.Mail, error) {
 		case domain.MailServerKey:
 			json.Unmarshal([]byte(v.Value), &mail)
 		case domain.MailUserKey:
+			json.Unmarshal([]byte(v.Value), &mailUser)
 			mailUser.Id = v.Id
 			mail.MailUsers = append(mail.MailUsers, mailUser)
 		}
@@ -163,43 +159,65 @@ func (repo *settingRepository) Webhook(ctx context.Context) (domain.Webhook, err
 	return webhook, nil
 }
 
-func (repo *settingRepository) UpdateSlack(ctx context.Context, slack domain.Slack) (int64, error) {
-	var setting dao.Setting
-	setting.Code = domain.SlackCode
-	setting.Key = domain.SlackUrlKey
-	id, err := repo.dao.Update(ctx, setting)
+func (repo *settingRepository) UpdateMail(ctx context.Context, mailServer domain.MailServer, template string) error {
+	serverJsonByte, _ := json.Marshal(mailServer)
+	serverJson := string(serverJsonByte)
+	err := repo.dao.UpdateByCodeKey(ctx, domain.MailCode, domain.MailServerKey, serverJson)
 	if err != nil {
-		return id, err
+		return err
 	}
-	setting.Key = domain.SlackTemplateKey
-	id, err = repo.dao.Update(ctx, setting)
+	err = repo.dao.UpdateByCodeKey(ctx, domain.MailCode, domain.MailTemplateKey, template)
 	if err != nil {
-		return id, err
+		return err
 	}
-	return id, nil
+	return nil
 }
 
-func (repo *settingRepository) UpdateWebhook(ctx context.Context, webhook domain.Webhook) (int64, error) {
-	//TODO implement me
-	panic("implement me")
+func (repo *settingRepository) UpdateSlack(ctx context.Context, slack domain.Slack) error {
+	err := repo.dao.UpdateByCodeKey(ctx, domain.SlackCode, domain.SlackUrlKey, slack.Url)
+	if err != nil {
+		return err
+	}
+	err = repo.dao.UpdateByCodeKey(ctx, domain.SlackCode, domain.SlackTemplateKey, slack.Template)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *settingRepository) UpdateWebhook(ctx context.Context, webhook domain.Webhook) error {
+	err := repo.dao.UpdateByCodeKey(ctx, domain.WebhookCode, domain.WebUrlKey, webhook.Url)
+	if err != nil {
+		return err
+	}
+	err = repo.dao.UpdateByCodeKey(ctx, domain.WebhookCode, domain.WebTemplateKey, webhook.Template)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (repo *settingRepository) CreateMailUser(ctx context.Context, mailUser domain.MailUser) (int64, error) {
-	//TODO implement me
-	panic("implement me")
+	mailUserJsonByte, _ := json.Marshal(mailUser)
+	return repo.dao.Insert(ctx, dao.Setting{
+		Code:  domain.MailCode,
+		Key:   domain.MailUserKey,
+		Value: string(mailUserJsonByte),
+	})
 }
 
 func (repo *settingRepository) RemoveMailUser(ctx context.Context, id int64) error {
-	//TODO implement me
-	panic("implement me")
+	return repo.dao.Delete(ctx, id)
 }
 
 func (repo *settingRepository) CreateChannel(ctx context.Context, channel domain.Channel) (int64, error) {
-	//TODO implement me
-	panic("implement me")
+	return repo.dao.Insert(ctx, dao.Setting{
+		Code:  domain.SlackCode,
+		Key:   domain.SlackChannelKey,
+		Value: channel.Name,
+	})
 }
 
 func (repo *settingRepository) RemoveChannel(ctx context.Context, id int64) error {
-	//TODO implement me
-	panic("implement me")
+	return repo.dao.Delete(ctx, id)
 }

@@ -20,3 +20,11 @@ type JobEditReq struct {
 	NotifyReceiverId string `json:"notify_receiver_id"`
 	NotifyKeyword    string `json:"notify_key_word"`
 }
+
+type MailEditReq struct {
+	Host     string `json:"host,omitempty" validate:"required"`
+	Port     int    `json:"port,omitempty" validate:"required"`
+	User     string `json:"user,omitempty" validate:"required"`
+	Password string `json:"password,omitempty" validate:"required"`
+	Template string `json:"template,omitempty" validate:"required"`
+}

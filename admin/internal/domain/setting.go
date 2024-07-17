@@ -9,6 +9,13 @@ type Mail struct {
 	Template  string     `json:"template"`
 }
 
+type MailServer struct {
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	User     string `json:"user"`
+	Password string `json:"password"`
+}
+
 type MailUser struct {
 	Id       int64  `json:"id"`
 	Username string `json:"username"`
