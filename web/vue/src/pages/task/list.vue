@@ -303,7 +303,7 @@ export default {
     },
     search(callback = null) {
       taskService.list(this.searchParams, (taskResp, executors) => {
-        this.tasks = taskResp.jobs
+        this.tasks = taskResp.tasks
         this.taskTotal = taskResp.total
         this.executors = executors
         if (callback) {

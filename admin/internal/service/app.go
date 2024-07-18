@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	"github.com/zc-zht/super-job/admin/pkg/utils"
+	"github.com/ac-zht/super-job/admin/pkg/utils"
 	"go.uber.org/zap"
 	"os"
 	"path/filepath"

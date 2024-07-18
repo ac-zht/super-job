@@ -2,9 +2,9 @@ package repository
 
 import (
 	"context"
+	"github.com/ac-zht/super-job/admin/internal/domain"
+	"github.com/ac-zht/super-job/admin/internal/repository/dao"
 	"github.com/ecodeclub/ekit/slice"
-	"github.com/zc-zht/super-job/admin/internal/domain"
-	"github.com/zc-zht/super-job/admin/internal/repository/dao"
 	"strings"
 )
 

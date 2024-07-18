@@ -2,62 +2,62 @@ package repository
 
 import (
 	"context"
+	"github.com/ac-zht/super-job/admin/internal/domain"
+	"github.com/ac-zht/super-job/admin/internal/repository/dao"
 	"github.com/ecodeclub/ekit/slice"
-	"github.com/zc-zht/super-job/admin/internal/domain"
-	"github.com/zc-zht/super-job/admin/internal/repository/dao"
 	"time"
 )
 
-var ErrNoMoreJob = dao.ErrNoMoreJob
+var ErrNoMoreTask = dao.ErrNoMoreTask
 
-//go:generate mockgen -source=./job.go -package=repomocks -destination=mocks/job.mock.go JobRepository
-type JobRepository interface {
-	List(ctx context.Context, offset, limit int) ([]domain.Job, error)
-	GetById(ctx context.Context, id int64) (domain.Job, error)
-	Create(ctx context.Context, j domain.Job) (int64, error)
-	Update(ctx context.Context, job domain.Job) error
+//go:generate mockgen -source=./task.go -package=repomocks -destination=mocks/task.mock.go TaskRepository
+type TaskRepository interface {
+	List(ctx context.Context, offset, limit int) ([]domain.Task, error)
+	GetById(ctx context.Context, id int64) (domain.Task, error)
+	Create(ctx context.Context, j domain.Task) (int64, error)
+	Update(ctx context.Context, task domain.Task) error
 	Delete(ctx context.Context, id int64) error
 }
 
-type PreemptJobRepository struct {
-	dao dao.JobDAO
+type PreemptTaskRepository struct {
+	dao dao.TaskDAO
 }
 
-func NewJobRepository(dao dao.JobDAO) JobRepository {
-	return &PreemptJobRepository{
+func NewTaskRepository(dao dao.TaskDAO) TaskRepository {
+	return &PreemptTaskRepository{
 		dao: dao,
 	}
 }
 
-func (p *PreemptJobRepository) List(ctx context.Context, offset, limit int) ([]domain.Job, error) {
-	jobs, err := p.dao.List(ctx, offset, limit)
+func (p *PreemptTaskRepository) List(ctx context.Context, offset, limit int) ([]domain.Task, error) {
+	tasks, err := p.dao.List(ctx, offset, limit)
 	if err != nil {
 		return nil, err
 	}
-	return slice.Map[dao.Job, domain.Job](jobs, func(idx int, src dao.Job) domain.Job {
+	return slice.Map[dao.Task, domain.Task](tasks, func(idx int, src dao.Task) domain.Task {
 		return p.toDomain(src)
 	}), nil
 }
 
-func (p *PreemptJobRepository) Create(ctx context.Context, j domain.Job) (int64, error) {
+func (p *PreemptTaskRepository) Create(ctx context.Context, j domain.Task) (int64, error) {
 	return p.dao.Insert(ctx, p.toEntity(j))
 }
 
-func (p *PreemptJobRepository) Update(ctx context.Context, job domain.Job) error {
-	return p.dao.Update(ctx, p.toEntity(job))
+func (p *PreemptTaskRepository) Update(ctx context.Context, task domain.Task) error {
+	return p.dao.Update(ctx, p.toEntity(task))
 }
 
-func (p *PreemptJobRepository) Delete(ctx context.Context, id int64) error {
+func (p *PreemptTaskRepository) Delete(ctx context.Context, id int64) error {
 	return p.dao.Delete(ctx, id)
 }
 
-func (p *PreemptJobRepository) GetById(ctx context.Context, id int64) (domain.Job, error) {
-	job, err := p.dao.GetById(ctx, id)
-	return p.toDomain(job), err
+func (p *PreemptTaskRepository) GetById(ctx context.Context, id int64) (domain.Task, error) {
+	task, err := p.dao.GetById(ctx, id)
+	return p.toDomain(task), err
 }
 
-func (p *PreemptJobRepository) toEntity(j domain.Job) dao.Job {
-	return dao.Job{
+func (p *PreemptTaskRepository) toEntity(j domain.Task) dao.Task {
+	return dao.Task{
 		Id:               j.Id,
 		ExecId:           j.ExecId,
 		Name:             j.Name,
@@ -82,9 +82,9 @@ func (p *PreemptJobRepository) toEntity(j domain.Job) dao.Job {
 	}
 }
 
-func (p *PreemptJobRepository) toDomain(j dao.Job) domain.Job {
+func (p *PreemptTaskRepository) toDomain(j dao.Task) domain.Task {
 	executor := &executorRepository{}
-	return domain.Job{
+	return domain.Task{
 		Id:               j.Id,
 		ExecId:           j.ExecId,
 		Name:             j.Name,
@@ -93,7 +93,7 @@ func (p *PreemptJobRepository) toDomain(j dao.Job) domain.Job {
 		Status:           j.Status,
 		NextTime:         time.UnixMilli(j.NextTime),
 		Multi:            j.Multi,
-		Protocol:         domain.JobProtocol(j.Protocol),
+		Protocol:         domain.TaskProtocol(j.Protocol),
 		HttpMethod:       domain.HttpMethod(j.HttpMethod),
 		ExecutorHandler:  j.ExecutorHandler,
 		Command:          j.Command,

@@ -6,47 +6,47 @@ import (
 	"time"
 )
 
-var ErrNoMoreJob = gorm.ErrRecordNotFound
+var ErrNoMoreTask = gorm.ErrRecordNotFound
 
-type JobDAO interface {
-	List(ctx context.Context, offset, limit int) ([]Job, error)
-	GetById(ctx context.Context, id int64) (Job, error)
-	Insert(ctx context.Context, j Job) (int64, error)
-	Update(ctx context.Context, j Job) error
+type TaskDAO interface {
+	List(ctx context.Context, offset, limit int) ([]Task, error)
+	GetById(ctx context.Context, id int64) (Task, error)
+	Insert(ctx context.Context, j Task) (int64, error)
+	Update(ctx context.Context, j Task) error
 	Delete(ctx context.Context, id int64) error
 }
 
-type GORMJobDAO struct {
+type GORMTaskDAO struct {
 	db *gorm.DB
 }
 
-func NewJobDAO(db *gorm.DB) JobDAO {
-	return &GORMJobDAO{
+func NewTaskDAO(db *gorm.DB) TaskDAO {
+	return &GORMTaskDAO{
 		db: db,
 	}
 }
 
-func (dao *GORMJobDAO) List(ctx context.Context, offset, limit int) ([]Job, error) {
-	var jobs []Job
+func (dao *GORMTaskDAO) List(ctx context.Context, offset, limit int) ([]Task, error) {
+	var tasks []Task
 	err := dao.db.WithContext(ctx).
 		Preload("Executor").
 		Offset(offset).
 		Limit(limit).
-		Find(&jobs).Error
-	return jobs, err
+		Find(&tasks).Error
+	return tasks, err
 }
 
-func (dao *GORMJobDAO) GetById(ctx context.Context, id int64) (Job, error) {
-	var job Job
-	err := dao.db.WithContext(ctx).First(&job, id).Error
-	return job, err
+func (dao *GORMTaskDAO) GetById(ctx context.Context, id int64) (Task, error) {
+	var task Task
+	err := dao.db.WithContext(ctx).First(&task, id).Error
+	return task, err
 }
 
-func (dao *GORMJobDAO) Delete(ctx context.Context, id int64) error {
-	return dao.db.WithContext(ctx).Where("id = ?", id).Delete(&Job{}).Error
+func (dao *GORMTaskDAO) Delete(ctx context.Context, id int64) error {
+	return dao.db.WithContext(ctx).Where("id = ?", id).Delete(&Task{}).Error
 }
 
-func (dao *GORMJobDAO) Insert(ctx context.Context, j Job) (int64, error) {
+func (dao *GORMTaskDAO) Insert(ctx context.Context, j Task) (int64, error) {
 	now := time.Now().UnixMilli()
 	j.Ctime = now
 	j.Utime = now
@@ -54,12 +54,12 @@ func (dao *GORMJobDAO) Insert(ctx context.Context, j Job) (int64, error) {
 	return j.Id, err
 }
 
-func (dao *GORMJobDAO) Update(ctx context.Context, j Job) error {
+func (dao *GORMTaskDAO) Update(ctx context.Context, j Task) error {
 	j.Utime = time.Now().UnixMilli()
 	return dao.db.WithContext(ctx).Updates(&j).Error
 }
 
-type Job struct {
+type Task struct {
 	Id         int64 `gorm:"primaryKey,autoIncrement"`
 	ExecId     int64
 	Name       string `gorm:"type:varchar(256);unique"`
@@ -98,6 +98,6 @@ type Job struct {
 }
 
 const (
-	jobStatusWaiting = iota
-	jobStatusRunning
+	taskStatusWaiting = iota
+	taskStatusRunning
 )

@@ -1,6 +1,6 @@
 package web
 
-type JobVo struct {
+type TaskVo struct {
 	Id         int64  `json:"id"`
 	Executor   string `json:"executor"`
 	Name       string `json:"name"`
@@ -22,7 +22,7 @@ type JobVo struct {
 	NextTime int64 `json:"next_time"`
 }
 
-type JobDetail struct {
+type TaskDetail struct {
 	Id         int64  `json:"id"`
 	ExecId     int64  `json:"exec_id"`
 	Name       string `json:"name"`

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/zc-zht/super-job/admin/internal/service"
+	"github.com/ac-zht/super-job/admin/internal/service"
 	"go.uber.org/zap"
 )
 

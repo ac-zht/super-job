@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"github.com/zc-zht/super-job/admin/internal/repository"
+	"github.com/ac-zht/super-job/admin/internal/repository"
 )
 
 type InstallService interface {

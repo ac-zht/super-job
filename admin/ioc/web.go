@@ -1,16 +1,16 @@
 package ioc
 
 import (
+	"github.com/ac-zht/super-job/admin/internal/web"
 	"github.com/gin-gonic/gin"
-	"github.com/zc-zht/super-job/admin/internal/web"
 )
 
-func InitWebServer(jobHandler *web.JobHandler,
+func InitWebServer(taskHandler *web.TaskHandler,
 	executorHandler *web.ExecutorHandler,
 	settingHandler *web.SettingHandler,
 	installHandler *web.InstallHandler) *gin.Engine {
 	server := gin.Default()
-	jobHandler.RegisterRoutes(server)
+	taskHandler.RegisterRoutes(server)
 	executorHandler.RegisterRoutes(server)
 	settingHandler.RegisterRoutes(server)
 	installHandler.RegisterRoutes(server)

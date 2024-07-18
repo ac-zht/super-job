@@ -1,47 +1,47 @@
 package web
 
 import (
+	"github.com/ac-zht/super-job/admin/internal/domain"
+	"github.com/ac-zht/super-job/admin/internal/errs"
+	"github.com/ac-zht/super-job/admin/internal/service"
+	"github.com/ac-zht/super-job/admin/pkg/ginx"
+	"github.com/ac-zht/super-job/admin/pkg/logger"
 	"github.com/ecodeclub/ekit/slice"
 	"github.com/gin-gonic/gin"
-	"github.com/zc-zht/super-job/admin/internal/domain"
-	"github.com/zc-zht/super-job/admin/internal/errs"
-	"github.com/zc-zht/super-job/admin/internal/service"
-	"github.com/zc-zht/super-job/admin/pkg/ginx"
-	"github.com/zc-zht/super-job/admin/pkg/logger"
 	"net/http"
 	"strconv"
 )
 
-type JobHandler struct {
-	svc service.JobService
+type TaskHandler struct {
+	svc service.TaskService
 	l   logger.Logger
 }
 
-func NewJobHandler(svc service.JobService) *JobHandler {
-	return &JobHandler{
+func NewTaskHandler(svc service.TaskService) *TaskHandler {
+	return &TaskHandler{
 		svc: svc,
 	}
 }
 
-func (h *JobHandler) List(ctx *gin.Context) {
+func (h *TaskHandler) List(ctx *gin.Context) {
 	page, err := strconv.Atoi(ctx.Query("page"))
 	pageSize, err := strconv.Atoi(ctx.Query("page_size"))
 	if err != nil {
 		return
 	}
 	offset := (page - 1) * pageSize
-	jobs, err := h.svc.List(ctx, offset, pageSize)
+	tasks, err := h.svc.List(ctx, offset, pageSize)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
-			Code: errs.JobInternalServerError,
+			Code: errs.TaskInternalServerError,
 			Msg:  "系统异常",
 		})
 		return
 	}
 	data := map[string]interface{}{
 		"total": 1,
-		"jobs": slice.Map[domain.Job, JobVo](jobs, func(idx int, src domain.Job) JobVo {
-			return JobVo{
+		"tasks": slice.Map[domain.Task, TaskVo](tasks, func(idx int, src domain.Task) TaskVo {
+			return TaskVo{
 				Id:              src.Id,
 				Executor:        src.Executor.Name,
 				Name:            src.Name,
@@ -67,12 +67,12 @@ func (h *JobHandler) List(ctx *gin.Context) {
 	return
 }
 
-func (h *JobHandler) Save(ctx *gin.Context) {
-	var req JobEditReq
+func (h *TaskHandler) Save(ctx *gin.Context) {
+	var req TaskEditReq
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
-	id, err := h.svc.Save(ctx, domain.Job{
+	id, err := h.svc.Save(ctx, domain.Task{
 		Id:               req.Id,
 		ExecId:           req.ExecId,
 		Name:             req.Name,
@@ -80,7 +80,7 @@ func (h *JobHandler) Save(ctx *gin.Context) {
 		Expression:       req.Expression,
 		Status:           req.Status,
 		Multi:            req.Multi,
-		Protocol:         domain.JobProtocol(req.Protocol),
+		Protocol:         domain.TaskProtocol(req.Protocol),
 		HttpMethod:       domain.HttpMethod(req.HttpMethod),
 		ExecutorHandler:  req.ExecutorHandler,
 		Command:          req.Command,
@@ -94,7 +94,7 @@ func (h *JobHandler) Save(ctx *gin.Context) {
 	})
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
-			Code: errs.JobInternalServerError,
+			Code: errs.TaskInternalServerError,
 			Msg:  "系统异常",
 		})
 		return
@@ -106,55 +106,55 @@ func (h *JobHandler) Save(ctx *gin.Context) {
 	return
 }
 
-func (h *JobHandler) Detail(ctx *gin.Context) {
+func (h *TaskHandler) Detail(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
-			Code: errs.JobInvalidInput,
+			Code: errs.TaskInvalidInput,
 			Msg:  "参数错误",
 		})
 		return
 	}
-	job, err := h.svc.GetById(ctx, id)
+	task, err := h.svc.GetById(ctx, id)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
-			Code: errs.JobInternalServerError,
+			Code: errs.TaskInternalServerError,
 			Msg:  "系统异常",
 		})
 		return
 	}
 	ctx.JSON(http.StatusOK, ginx.Result{
-		Data: JobDetail{
-			Id:               job.Id,
-			ExecId:           job.ExecId,
-			Name:             job.Name,
-			Cfg:              job.Cfg,
-			Expression:       job.Expression,
-			Protocol:         job.Protocol.ToUint8(),
-			HttpMethod:       job.HttpMethod.ToUint8(),
-			Status:           job.Status,
-			Multi:            job.Multi,
-			ExecutorHandler:  job.ExecutorHandler,
-			Command:          job.Command,
-			Timeout:          job.Timeout,
-			RetryTimes:       job.RetryTimes,
-			RetryInterval:    job.RetryInterval,
-			NotifyStatus:     job.NotifyStatus.ToUint8(),
-			NotifyType:       job.NotifyType.ToUint8(),
-			NotifyReceiverId: job.NotifyReceiverId,
-			NotifyKeyword:    job.NotifyKeyword,
+		Data: TaskDetail{
+			Id:               task.Id,
+			ExecId:           task.ExecId,
+			Name:             task.Name,
+			Cfg:              task.Cfg,
+			Expression:       task.Expression,
+			Protocol:         task.Protocol.ToUint8(),
+			HttpMethod:       task.HttpMethod.ToUint8(),
+			Status:           task.Status,
+			Multi:            task.Multi,
+			ExecutorHandler:  task.ExecutorHandler,
+			Command:          task.Command,
+			Timeout:          task.Timeout,
+			RetryTimes:       task.RetryTimes,
+			RetryInterval:    task.RetryInterval,
+			NotifyStatus:     task.NotifyStatus.ToUint8(),
+			NotifyType:       task.NotifyType.ToUint8(),
+			NotifyReceiverId: task.NotifyReceiverId,
+			NotifyKeyword:    task.NotifyKeyword,
 		},
 	})
 	return
 }
 
-func (h *JobHandler) Delete(ctx *gin.Context) {
+func (h *TaskHandler) Delete(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
-			Code: errs.JobInvalidInput,
+			Code: errs.TaskInvalidInput,
 			Msg:  "参数错误",
 		})
 		return
@@ -162,7 +162,7 @@ func (h *JobHandler) Delete(ctx *gin.Context) {
 	err = h.svc.Delete(ctx, id)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
-			Code: errs.JobInternalServerError,
+			Code: errs.TaskInternalServerError,
 			Msg:  "系统异常",
 		})
 		return
@@ -173,8 +173,8 @@ func (h *JobHandler) Delete(ctx *gin.Context) {
 	return
 }
 
-func (h *JobHandler) RegisterRoutes(server *gin.Engine) {
-	ug := server.Group("/api/job")
+func (h *TaskHandler) RegisterRoutes(server *gin.Engine) {
+	ug := server.Group("/api/task")
 	ug.GET("", h.List)
 	ug.GET("/:id", h.Detail)
 	ug.POST("/save", h.Save)

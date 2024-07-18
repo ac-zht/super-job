@@ -1,7 +1,7 @@
 package ioc
 
 import (
-	"github.com/zc-zht/super-job/scheduler/internal/repository/dao"
+	"github.com/ac-zht/super-job/scheduler/internal/repository/dao"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )

@@ -3,12 +3,12 @@
 package startup
 
 import (
+	"github.com/ac-zht/super-job/admin/internal/repository"
+	"github.com/ac-zht/super-job/admin/internal/repository/dao"
+	"github.com/ac-zht/super-job/admin/internal/service"
+	"github.com/ac-zht/super-job/admin/internal/web"
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
-	"github.com/zc-zht/super-job/admin/internal/repository"
-	"github.com/zc-zht/super-job/admin/internal/repository/dao"
-	"github.com/zc-zht/super-job/admin/internal/service"
-	"github.com/zc-zht/super-job/admin/internal/web"
 )
 
 var thirdProvider = wire.NewSet(
@@ -21,17 +21,17 @@ var executorSvcProvider = wire.NewSet(
 	service.NewExecutorService,
 	web.NewExecutorHandler)
 
-var jobSvcProvider = wire.NewSet(
-	dao.NewJobDAO,
-	repository.NewJobRepository,
-	service.NewJobService,
-	web.NewJobHandler)
+var taskSvcProvider = wire.NewSet(
+	dao.NewTaskDAO,
+	repository.NewTaskRepository,
+	service.NewTaskService,
+	web.NewTaskHandler)
 
 func InitWeb() *gin.Engine {
 	wire.Build(
 		thirdProvider,
 		executorSvcProvider,
-		jobSvcProvider,
+		taskSvcProvider,
 		InitTestWebServer,
 	)
 	return new(gin.Engine)

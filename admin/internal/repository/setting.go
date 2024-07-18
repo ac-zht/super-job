@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/zc-zht/super-job/admin/internal/domain"
-	"github.com/zc-zht/super-job/admin/internal/repository/dao"
+	"github.com/ac-zht/super-job/admin/internal/domain"
+	"github.com/ac-zht/super-job/admin/internal/repository/dao"
 )
 
 type SettingRepository interface {

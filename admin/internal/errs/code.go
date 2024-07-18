@@ -1,8 +1,8 @@
 package errs
 
 const (
-	JobInternalServerError = 10000
-	JobInvalidInput        = 10001
+	TaskInternalServerError = 10000
+	TaskInvalidInput        = 10001
 
 	ExecutorInternalServerError = 11000
 	ExecutorInvalidInput        = 11001

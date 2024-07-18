@@ -5,7 +5,7 @@ export default {
   list(query, callback) {
     httpClient.batchGet([
       {
-        uri: '/job',
+        uri: '/task',
         params: query
       },
       {
@@ -17,7 +17,7 @@ export default {
   detail(id, callback) {
     httpClient.batchGet([
       {
-        uri: `/job/${id}`
+        uri: `/task/${id}`
       },
       {
         uri: '/executor/all'
@@ -26,22 +26,22 @@ export default {
   },
 
   update(data, callback) {
-    httpClient.post('/job/save', data, callback)
+    httpClient.post('/task/save', data, callback)
   },
 
   remove(id, callback) {
-    httpClient.post(`/job/delete/${id}`, {}, callback)
+    httpClient.post(`/task/delete/${id}`, {}, callback)
   },
 
   enable(id, callback) {
-    httpClient.post(`/job/enable/${id}`, {}, callback)
+    httpClient.post(`/task/enable/${id}`, {}, callback)
   },
 
   disable(id, callback) {
-    httpClient.post(`/job/disable/${id}`, {}, callback)
+    httpClient.post(`/task/disable/${id}`, {}, callback)
   },
 
   run(id, callback) {
-    httpClient.get(`/job/run/${id}`, {}, callback)
+    httpClient.get(`/task/run/${id}`, {}, callback)
   }
 }

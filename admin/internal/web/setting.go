@@ -1,11 +1,11 @@
 package web
 
 import (
+	"github.com/ac-zht/super-job/admin/internal/domain"
+	"github.com/ac-zht/super-job/admin/internal/errs"
+	"github.com/ac-zht/super-job/admin/internal/service"
+	"github.com/ac-zht/super-job/admin/pkg/ginx"
 	"github.com/gin-gonic/gin"
-	"github.com/zc-zht/super-job/admin/internal/domain"
-	"github.com/zc-zht/super-job/admin/internal/errs"
-	"github.com/zc-zht/super-job/admin/internal/service"
-	"github.com/zc-zht/super-job/admin/pkg/ginx"
 	"net/http"
 	"strconv"
 )

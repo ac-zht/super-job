@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type Job struct {
+type Task struct {
 	Id         int64
 	ExecId     int64
 	Name       string
@@ -15,14 +15,14 @@ type Job struct {
 	NextTime   time.Time
 	Status     uint8
 	Multi      uint8
-	Protocol   JobProtocol
+	Protocol   TaskProtocol
 	HttpMethod HttpMethod
 
 	ExecutorHandler string
 	Command         string
 
 	Timeout       int64
-	RetryTimes    int64
+	RetryTimes    int8
 	RetryInterval int64
 
 	NotifyStatus     NotifyStatus
@@ -40,24 +40,24 @@ type Job struct {
 	CancelFunc func()
 }
 
-func (j Job) Next(t time.Time) time.Time {
+func (tk Task) Next(t time.Time) time.Time {
 	expr := cron.NewParser(cron.Second | cron.Minute |
 		cron.Hour | cron.Dom |
 		cron.Month | cron.Dow |
 		cron.Descriptor)
-	s, _ := expr.Parse(j.Expression)
+	s, _ := expr.Parse(tk.Expression)
 	return s.Next(t)
 }
 
-type JobProtocol uint8
+type TaskProtocol uint8
 
 const (
-	TaskHTTP  JobProtocol = iota + 1 // HTTP
-	TaskRPC                          // RPC
-	TaskShell                        // 系统命令
+	TaskHTTP  TaskProtocol = iota + 1 // HTTP
+	TaskRPC                           // RPC
+	TaskShell                         // 系统命令
 )
 
-func (t JobProtocol) ToUint8() uint8 {
+func (t TaskProtocol) ToUint8() uint8 {
 	return uint8(t)
 }
 
@@ -97,13 +97,25 @@ func (t NotifyType) ToUint8() uint8 {
 	return uint8(t)
 }
 
+type TaskResult struct {
+	Result     string
+	Err        error
+	RetryTimes int8
+}
+
+type Handler interface {
+	Run(task Task, jobUniqueId int64) (string, error)
+}
+
+const HttpExecTimeout = 300
+
 const (
 	SingleInstanceRun uint8 = iota
 	MultiInstanceRun
 )
 
 const (
-	JobStatusForbidden uint8 = iota
-	JobStatusWaiting
-	JobStatusRunning
+	TaskStatusForbidden uint8 = iota
+	TaskStatusWaiting
+	TaskStatusRunning
 )

@@ -1,8 +1,8 @@
 package ioc
 
 import (
+	"github.com/ac-zht/super-job/admin/pkg/logger"
 	"github.com/spf13/viper"
-	"github.com/zc-zht/super-job/admin/pkg/logger"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"

@@ -3,14 +3,14 @@ package integration
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/ac-zht/super-job/admin/internal/domain"
+	"github.com/ac-zht/super-job/admin/internal/integration/startup"
+	"github.com/ac-zht/super-job/admin/internal/repository/dao"
+	"github.com/ac-zht/super-job/admin/internal/web"
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"github.com/zc-zht/super-job/admin/internal/domain"
-	"github.com/zc-zht/super-job/admin/internal/integration/startup"
-	"github.com/zc-zht/super-job/admin/internal/repository/dao"
-	"github.com/zc-zht/super-job/admin/internal/web"
 	"gorm.io/gorm"
 	"net/http"
 	"net/http/httptest"
@@ -40,7 +40,7 @@ func (a *WebTestSuite) SetupSuite() {
 }
 
 func (a *WebTestSuite) SetupTest() {
-	err := a.db.Exec("TRUNCATE TABLE `jobs`").Error
+	err := a.db.Exec("TRUNCATE TABLE `tasks`").Error
 	assert.NoError(a.T(), err)
 	err = a.db.Exec("TRUNCATE TABLE `users`").Error
 	assert.NoError(a.T(), err)
@@ -115,12 +115,12 @@ func (a *WebTestSuite) TestExecutorHandler_Save() {
 	}
 }
 
-func (a *WebTestSuite) TestJobHandler_Save() {
+func (a *WebTestSuite) TestTaskHandler_Save() {
 	testCases := []struct {
 		name   string
 		before func(t *testing.T)
 		after  func(t *testing.T)
-		req    web.JobEditReq
+		req    web.TaskEditReq
 
 		wantCode   int
 		wantResult Result[int64]
@@ -157,41 +157,41 @@ func (a *WebTestSuite) TestJobHandler_Save() {
 				})
 			},
 			after: func(t *testing.T) {
-				var job dao.Job
-				a.db.Where("name = ?", "job-1").First(&job)
-				assert.True(t, job.Ctime > 0)
-				assert.True(t, job.Utime > 0)
-				job.Utime = 0
-				job.Ctime = 0
+				var task dao.Task
+				a.db.Where("name = ?", "task-1").First(&task)
+				assert.True(t, task.Ctime > 0)
+				assert.True(t, task.Utime > 0)
+				task.Utime = 0
+				task.Ctime = 0
 				expression := "0 * * * * *"
-				assert.Equal(t, dao.Job{
+				assert.Equal(t, dao.Task{
 					Id:               1,
-					Name:             "job-1",
+					Name:             "task-1",
 					ExecId:           1,
-					Cfg:              "this is a test job",
+					Cfg:              "this is a test task",
 					Expression:       expression,
 					NextTime:         Next(time.Now(), expression).UnixMilli(),
 					Status:           1,
 					Multi:            0,
 					Protocol:         2,
-					ExecutorHandler:  "jobHandler",
+					ExecutorHandler:  "taskHandler",
 					Timeout:          10,
 					RetryTimes:       3,
 					RetryInterval:    1,
 					NotifyStatus:     2,
 					NotifyType:       1,
 					NotifyReceiverId: "8",
-				}, job)
+				}, task)
 			},
-			req: web.JobEditReq{
-				Name:             "job-1",
+			req: web.TaskEditReq{
+				Name:             "task-1",
 				ExecId:           1,
-				Cfg:              "this is a test job",
+				Cfg:              "this is a test task",
 				Expression:       "0 * * * * *",
-				Status:           domain.JobStatusWaiting,
+				Status:           domain.TaskStatusWaiting,
 				Multi:            domain.SingleInstanceRun,
 				Protocol:         domain.TaskRPC.ToUint8(),
-				ExecutorHandler:  "jobHandler",
+				ExecutorHandler:  "taskHandler",
 				Timeout:          10,
 				RetryTimes:       3,
 				RetryInterval:    1,
@@ -212,7 +212,7 @@ func (a *WebTestSuite) TestJobHandler_Save() {
 			data, err := json.Marshal(tc.req)
 			assert.NoError(t, err)
 			req, err := http.NewRequest(http.MethodPost,
-				"/api/job/save", bytes.NewReader(data))
+				"/api/task/save", bytes.NewReader(data))
 			assert.NoError(t, err)
 			req.Header.Set("Content-Type",
 				"application/json")

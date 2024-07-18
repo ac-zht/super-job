@@ -1,6 +1,6 @@
 package web
 
-type JobEditReq struct {
+type TaskEditReq struct {
 	Id               int64  `json:"id"`
 	Name             string `json:"name"`
 	ExecId           int64  `json:"exec_id"`

@@ -2,11 +2,10 @@ package web
 
 import (
 	"context"
-	"fmt"
+	"github.com/ac-zht/gotools/pool"
+	"github.com/ac-zht/super-job/scheduler/internal/service"
+	"github.com/ac-zht/super-job/scheduler/pkg/logger"
 	"github.com/gin-gonic/gin"
-	"github.com/zc-zht/gotools/pool"
-	"github.com/zc-zht/super-job/scheduler/internal/service"
-	"github.com/zc-zht/super-job/scheduler/pkg/logger"
 	"time"
 )
 
@@ -40,7 +39,13 @@ func (h *Scheduler) Start(ctx *gin.Context) error {
 			time.Sleep(h.failInterval)
 			continue
 		}
-		fmt.Println(j)
 		//放入到线程池
+		job := h.svc.CreateJob(j)
+		err = h.quickPool.Submit(ctx, pool.TaskFunc(job))
+		//阻塞自旋
+		if err != nil {
+			time.Sleep(time.Second * 5)
+			continue
+		}
 	}
 }

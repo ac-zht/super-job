@@ -7,27 +7,27 @@
 package startup
 
 import (
+	"github.com/ac-zht/super-job/admin/internal/repository"
+	"github.com/ac-zht/super-job/admin/internal/repository/dao"
+	"github.com/ac-zht/super-job/admin/internal/service"
+	"github.com/ac-zht/super-job/admin/internal/web"
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
-	"github.com/zc-zht/super-job/admin/internal/repository"
-	"github.com/zc-zht/super-job/admin/internal/repository/dao"
-	"github.com/zc-zht/super-job/admin/internal/service"
-	"github.com/zc-zht/super-job/admin/internal/web"
 )
 
 // Injectors from wire.go:
 
 func InitWeb() *gin.Engine {
 	db := InitTestDB()
-	jobDAO := dao.NewJobDAO(db)
-	jobRepository := repository.NewJobRepository(jobDAO)
-	jobService := service.NewJobService(jobRepository)
-	jobHandler := web.NewJobHandler(jobService)
+	taskDAO := dao.NewTaskDAO(db)
+	taskRepository := repository.NewTaskRepository(taskDAO)
+	taskService := service.NewTaskService(taskRepository)
+	taskHandler := web.NewTaskHandler(taskService)
 	executorDAO := dao.NewExecutorDAO(db)
 	executorRepository := repository.NewExecutorRepository(executorDAO)
 	executorService := service.NewExecutorService(executorRepository)
 	executorHandler := web.NewExecutorHandler(executorService)
-	engine := InitTestWebServer(jobHandler, executorHandler)
+	engine := InitTestWebServer(taskHandler, executorHandler)
 	return engine
 }
 
@@ -39,4 +39,4 @@ var thirdProvider = wire.NewSet(
 
 var executorSvcProvider = wire.NewSet(dao.NewExecutorDAO, repository.NewExecutorRepository, service.NewExecutorService, web.NewExecutorHandler)
 
-var jobSvcProvider = wire.NewSet(dao.NewJobDAO, repository.NewJobRepository, service.NewJobService, web.NewJobHandler)
+var taskSvcProvider = wire.NewSet(dao.NewTaskDAO, repository.NewTaskRepository, service.NewTaskService, web.NewTaskHandler)
