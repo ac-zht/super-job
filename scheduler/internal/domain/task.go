@@ -18,8 +18,9 @@ type Task struct {
 	Protocol   TaskProtocol
 	HttpMethod HttpMethod
 
-	ExecutorHandler string
-	Command         string
+	ExecutorHandler       string
+	Command               string
+	ExecutorRouteStrategy string
 
 	Timeout       int64
 	RetryTimes    int8
@@ -118,4 +119,12 @@ const (
 	TaskStatusForbidden uint8 = iota
 	TaskStatusWaiting
 	TaskStatusRunning
+)
+
+const (
+	ExecutorFirstRouteStrategy    = "FIRST"
+	ExecutorLastRouteStrategy     = "LAST"
+	ExecutorPollRouteStrategy     = "POLL"
+	ExecutorRandomRouteStrategy   = "RANDOM"
+	ExecutorFailoverRouteStrategy = "FAILOVER"
 )

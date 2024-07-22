@@ -72,8 +72,9 @@ type Task struct {
 	HttpMethod uint8 `gorm:"tinyint"`
 	Multi      uint8 //该任务同一时间是否只运行在一个实例上
 	//方法或命令
-	ExecutorHandler string
-	Command         string
+	ExecutorHandler       string
+	Command               string
+	ExecutorRouteStrategy string `gorm:"type:varchar(50)"`
 
 	//失败重试策略
 	Timeout       int64

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "./";
+package service;
+
+service Task {
+  rpc Run(TaskRequest) returns (TaskResponse){}
+}
+
+message TaskRequest {
+  string command = 1; //命令
+  string handler = 2; //方法handler
+  int32  timeout = 3; //任务超时时间
+  int64 id = 4; //执行任务唯一ID
+}
+
+message TaskResponse {
+  string output = 1; //命令标准输出
+  string error = 2; //命令错误
+}
