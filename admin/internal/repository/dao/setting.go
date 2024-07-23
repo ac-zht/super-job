@@ -8,7 +8,7 @@ import (
 
 type SettingDAO interface {
 	FindByKey(ctx context.Context, code string) ([]Setting, error)
-	Insert(ctx context.Context, setting Setting) (id int64, err error)
+	Insert(ctx context.Context, setting Setting) (int64, error)
 	UpdateByCodeKey(ctx context.Context, code, key, value string) error
 	Update(ctx context.Context, setting Setting) (int64, error)
 	Delete(ctx context.Context, id int64) error

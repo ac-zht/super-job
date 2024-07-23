@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"github.com/robfig/cron/v3"
 	"time"
 )
@@ -23,7 +24,7 @@ type Task struct {
 	ExecutorRouteStrategy string
 
 	Timeout       int64
-	RetryTimes    int8
+	RetryTimes    int64
 	RetryInterval int64
 
 	NotifyStatus     NotifyStatus
@@ -62,6 +63,18 @@ func (t TaskProtocol) ToUint8() uint8 {
 	return uint8(t)
 }
 
+func (t TaskProtocol) ToString() string {
+	switch t {
+	case TaskHTTP:
+		return "HTTP"
+	case TaskRPC:
+		return "RPC"
+	case TaskShell:
+		return "SHELL"
+	}
+	return ""
+}
+
 type HttpMethod uint8
 
 const (
@@ -71,6 +84,16 @@ const (
 
 func (t HttpMethod) ToUint8() uint8 {
 	return uint8(t)
+}
+
+func (t HttpMethod) ToString() string {
+	switch t {
+	case HttpGet:
+		return "GET"
+	case HttpPost:
+		return "POST"
+	}
+	return ""
 }
 
 type NotifyStatus uint8
@@ -101,11 +124,11 @@ func (t NotifyType) ToUint8() uint8 {
 type TaskResult struct {
 	Result     string
 	Err        error
-	RetryTimes int8
+	RetryTimes int64
 }
 
 type Handler interface {
-	Run(task Task, jobUniqueId int64) (string, error)
+	Run(ctx context.Context, task Task, jobUniqueId int64) (string, error)
 }
 
 const HttpExecTimeout = 300

@@ -2,11 +2,15 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ac-zht/super-job/scheduler/internal/domain"
 	"github.com/ac-zht/super-job/scheduler/internal/repository"
+	hc "github.com/ac-zht/super-job/scheduler/internal/service/http/client"
+	rc "github.com/ac-zht/super-job/scheduler/internal/service/rpc/client"
+	"github.com/ac-zht/super-job/scheduler/internal/service/rpc/executor/route"
 	pb "github.com/ac-zht/super-job/scheduler/internal/service/rpc/proto"
-	"github.com/ac-zht/super-job/scheduler/pkg/logger"
+	"github.com/ac-zht/super-job/scheduler/pkg/utils"
 	"go.uber.org/zap"
 	"net/http"
 	"strings"
@@ -21,27 +25,27 @@ type JobService interface {
 }
 
 type cronJobService struct {
-	repo            repository.TaskRepository
-	l               logger.Logger
+	taskRepo        repository.TaskRepository
+	taskLogRepo     repository.TaskLogRepository
 	refreshInterval time.Duration
 }
 
-func NenJobService(
-	repo repository.TaskRepository,
-	l logger.Logger) JobService {
+func NenJobService(taskRepo repository.TaskRepository,
+	taskLogRepo repository.TaskLogRepository) JobService {
 	return &cronJobService{
-		repo:            repo,
-		l:               l,
+		taskRepo:        taskRepo,
+		taskLogRepo:     taskLogRepo,
 		refreshInterval: time.Second * 10,
 	}
 }
 
 func (c *cronJobService) Preempt(ctx context.Context) (domain.Task, error) {
-	j, err := c.repo.Preempt(ctx)
+	j, err := c.taskRepo.Preempt(ctx)
 	if err != nil {
 		return domain.Task{}, err
 	}
 	ticker := time.NewTicker(c.refreshInterval)
+	//续约任务
 	go func() {
 		for range ticker.C {
 			c.refresh(j.Id)
@@ -51,11 +55,9 @@ func (c *cronJobService) Preempt(ctx context.Context) (domain.Task, error) {
 		ticker.Stop()
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
-		err := c.repo.Release(ctx, j.Id)
+		err := c.taskRepo.Release(ctx, j.Id)
 		if err != nil {
-			c.l.Error("释放任务失败",
-				logger.Error(err),
-				logger.Int64("id", j.Id))
+			zap.L().Error("释放任务失败", zap.Int64("id", j.Id), zap.Error(err))
 		}
 	}
 	return j, nil
@@ -64,7 +66,7 @@ func (c *cronJobService) Preempt(ctx context.Context) (domain.Task, error) {
 func (c *cronJobService) ResetNextTime(ctx context.Context, task domain.Task) error {
 	t := task.Next(time.Now())
 	if !t.IsZero() {
-		return c.repo.UpdateNextTime(ctx, task.Id, t)
+		return c.taskRepo.UpdateNextTime(ctx, task.Id, t)
 	}
 	return nil
 }
@@ -75,9 +77,20 @@ func (c *cronJobService) CreateJob(task domain.Task) func(ctx context.Context) e
 		return nil
 	}
 	return func(ctx context.Context) error {
-		c.beforeExecJob(task)
-		c.execJob(handler, task, 1)
-		c.afterExecJob(task)
+		taskLogId := c.beforeExecJob(ctx, task)
+		if taskLogId <= 0 {
+			return errors.New("任务执行准备失败")
+		}
+		var exec string
+		if task.Protocol == domain.TaskRPC {
+			exec = task.ExecutorHandler
+		} else {
+			exec = task.Command
+		}
+		zap.L().Info(fmt.Sprintf(" 开始执行任务#%s#命令-%s", task.Name, exec))
+		taskResult := c.execJob(ctx, handler, task, 1)
+		zap.L().Info(fmt.Sprintf(" 任务完成#%s#命令-%s", task.Name, exec))
+		c.afterExecJob(ctx, taskLogId, task, taskResult)
 		return nil
 	}
 }
@@ -93,14 +106,14 @@ func (c *cronJobService) createHandler(task domain.Task) domain.Handler {
 	return handler
 }
 
-func (c *cronJobService) execJob(handler domain.Handler, task domain.Task, jobUniqueId int64) domain.TaskResult {
+func (c *cronJobService) execJob(ctx context.Context, handler domain.Handler, task domain.Task, jobUniqueId int64) domain.TaskResult {
 	execTimes := task.RetryTimes + 1
 	var (
 		output string
 		err    error
 	)
-	for i := int8(0); i < execTimes; i++ {
-		output, err = handler.Run(task, jobUniqueId)
+	for i := int64(0); i < execTimes; i++ {
+		output, err = handler.Run(ctx, task, jobUniqueId)
 		if err == nil {
 			return domain.TaskResult{Result: output, Err: err, RetryTimes: i}
 		}
@@ -116,25 +129,14 @@ func (c *cronJobService) execJob(handler domain.Handler, task domain.Task, jobUn
 	return domain.TaskResult{Result: output, Err: err, RetryTimes: task.RetryTimes}
 }
 
-func (c *cronJobService) beforeExecJob(task domain.Task) {
-	//创建执行日志
-}
-
-func (c *cronJobService) afterExecJob(task domain.Task) {
-	//设置next_time
-	//更新执行日志
-	//通知
-	//执行依赖任务
-}
-
 type HTTPHandler struct{}
 
-func (h *HTTPHandler) Run(task domain.Task, jobUniqueId int64) (string, error) {
+func (h *HTTPHandler) Run(ctx context.Context, task domain.Task, jobUniqueId int64) (string, error) {
 	if task.Timeout <= 0 || task.Timeout > domain.HttpExecTimeout {
 		task.Timeout = domain.HttpExecTimeout
 	}
-	var resp ResponseWrapper
-	httpClient := &HttpClient{
+	var resp hc.ResponseWrapper
+	httpClient := &hc.HttpClient{
 		Url:     task.Command,
 		Timeout: task.Timeout,
 		Client:  &http.Client{},
@@ -158,26 +160,95 @@ func (h *HTTPHandler) Run(task domain.Task, jobUniqueId int64) (string, error) {
 
 type RPCHandler struct{}
 
-func (h *RPCHandler) Run(task domain.Task, jobUniqueId int64) (string, error) {
+func (h *RPCHandler) Run(ctx context.Context, task domain.Task, jobUniqueId int64) (string, error) {
 	taskRequest := new(pb.TaskRequest)
 	taskRequest.Timeout = int32(task.Timeout)
 	taskRequest.Command = task.Command
 	taskRequest.Id = jobUniqueId
+	var (
+		output string
+		err    error
+	)
+	rpcClient := &rc.RpcClient{}
 	switch task.ExecutorRouteStrategy {
 	case domain.ExecutorFirstRouteStrategy:
-
+		output, err = (&route.FirstRouteReqStrategy{Client: rpcClient}).Call(task.Executor.Hosts, taskRequest)
 	case domain.ExecutorLastRouteStrategy:
+		output, err = (&route.LastRouteReqStrategy{Client: rpcClient}).Call(task.Executor.Hosts, taskRequest)
 	}
+	return output, err
+}
 
+func (c *cronJobService) beforeExecJob(ctx context.Context, task domain.Task) int64 {
+	//检测该任务是否正在被调度
+	taskLogId, err := c.createTaskLog(ctx, task, domain.JobStatusRunning)
+	if err != nil {
+		zap.L().Error(fmt.Sprintf("任务开始执行#写入任务日志失败"), zap.Error(err))
+		return 0
+	}
+	return taskLogId
+}
+
+func (c *cronJobService) afterExecJob(ctx context.Context, taskLogId int64, task domain.Task, taskResult domain.TaskResult) {
+	//设置next_time
+	err := c.ResetNextTime(ctx, task)
+	if err != nil {
+		zap.L().Error(fmt.Sprintf("任务结束#更新下一次的执行失败"), zap.Error(err))
+	}
+	//更新执行日志
+	err = c.updateTaskLog(ctx, taskLogId, taskResult)
+	if err != nil {
+		zap.L().Error("任务结束#更新任务日志失败", zap.Error(err))
+	}
+	//通知
+	//执行依赖任务
+}
+
+func (c *cronJobService) createTaskLog(ctx context.Context, task domain.Task, status uint8) (int64, error) {
+	ip, _ := utils.GetLocalIP()
+	var protocol string
+	if task.Protocol == domain.TaskHTTP {
+		protocol = fmt.Sprintf("%s-%s", task.Protocol.ToString(), task.HttpMethod.ToString())
+	} else {
+		protocol = task.Protocol.ToString()
+	}
+	taskLog := domain.TaskLog{
+		TaskId:        task.Id,
+		ExecId:        task.ExecId,
+		Name:          task.Name,
+		Spec:          task.Expression,
+		SchedulerAddr: ip,
+		Protocol:      protocol,
+		Command:       task.Command,
+		ExecutorMsg:   "",
+		Timeout:       task.Timeout,
+		RetryTimes:    task.RetryTimes,
+		StartTime:     time.Now(),
+		Status:        status,
+	}
+	return c.taskLogRepo.Create(ctx, taskLog)
+}
+
+func (c *cronJobService) updateTaskLog(ctx context.Context, taskLogId int64, taskResult domain.TaskResult) error {
+	result := taskResult.Result
+	var status uint8
+	if taskResult.Err != nil {
+		status = domain.JobStatusFailure
+	} else {
+		status = domain.JobStatusFinish
+	}
+	return c.taskLogRepo.UpdateById(ctx, taskLogId, domain.CommonMap{
+		"retry_times": taskResult.RetryTimes,
+		"status":      status,
+		"result":      result,
+	})
 }
 
 func (c *cronJobService) refresh(id int64) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	err := c.repo.UpdateUtime(ctx, id)
+	err := c.taskRepo.UpdateUtime(ctx, id)
 	if err != nil {
-		c.l.Error("续约失败",
-			logger.Int64("jid", id),
-			logger.Error(err))
+		zap.L().Error("续约失败", zap.Int64("jid", id), zap.Error(err))
 	}
 }
