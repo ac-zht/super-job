@@ -7,6 +7,7 @@ import (
 	"github.com/ac-zht/super-job/scheduler/internal/domain"
 	"github.com/ac-zht/super-job/scheduler/internal/repository"
 	hc "github.com/ac-zht/super-job/scheduler/internal/service/http/client"
+	"github.com/ac-zht/super-job/scheduler/internal/service/notify"
 	rc "github.com/ac-zht/super-job/scheduler/internal/service/rpc/client"
 	"github.com/ac-zht/super-job/scheduler/internal/service/rpc/executor/route"
 	pb "github.com/ac-zht/super-job/scheduler/internal/service/rpc/proto"
@@ -27,14 +28,16 @@ type JobService interface {
 type cronJobService struct {
 	taskRepo        repository.TaskRepository
 	taskLogRepo     repository.TaskLogRepository
+	notifySvc       notify.Service
 	refreshInterval time.Duration
 }
 
 func NenJobService(taskRepo repository.TaskRepository,
-	taskLogRepo repository.TaskLogRepository) JobService {
+	taskLogRepo repository.TaskLogRepository, notifySvc notify.Service) JobService {
 	return &cronJobService{
 		taskRepo:        taskRepo,
 		taskLogRepo:     taskLogRepo,
+		notifySvc:       notifySvc,
 		refreshInterval: time.Second * 10,
 	}
 }
@@ -201,6 +204,7 @@ func (c *cronJobService) afterExecJob(ctx context.Context, taskLogId int64, task
 		zap.L().Error("任务结束#更新任务日志失败", zap.Error(err))
 	}
 	//通知
+	go c.SendNotification(ctx, task, taskResult)
 	//执行依赖任务
 }
 
@@ -242,6 +246,37 @@ func (c *cronJobService) updateTaskLog(ctx context.Context, taskLogId int64, tas
 		"status":      status,
 		"result":      result,
 	})
+}
+
+func (c *cronJobService) SendNotification(ctx context.Context, task domain.Task, taskResult domain.TaskResult) {
+	if task.NotifyStatus == domain.NoNotification {
+		return
+	}
+	if task.NotifyStatus == domain.FailNotification && taskResult.Err == nil {
+		return
+	}
+	if task.NotifyStatus == domain.OverKeywordNotification && !strings.Contains(taskResult.Result, task.NotifyKeyword) {
+		return
+	}
+	if task.NotifyType != domain.WebhookNotification && task.NotifyReceiverId == "" {
+		return
+	}
+	var statStr string
+	if taskResult.Err != nil {
+		statStr = "失败"
+	} else {
+		statStr = "成功"
+	}
+	msg := notify.Message{
+		"task_type":        task.NotifyType,
+		"task_receiver_id": task.NotifyReceiverId,
+		"name":             task.Name,
+		"output":           taskResult.Result,
+		"status":           statStr,
+		"task_id":          task.Id,
+		"remark":           task.Cfg,
+	}
+	c.notifySvc.Push(msg)
 }
 
 func (c *cronJobService) refresh(id int64) {
