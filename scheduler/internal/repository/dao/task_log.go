@@ -14,6 +14,12 @@ type GORMTaskLogDAO struct {
 	db *gorm.DB
 }
 
+func NewTaskLogDAO(db *gorm.DB) TaskLogDAO {
+	return &GORMTaskLogDAO{
+		db: db,
+	}
+}
+
 func (dao *GORMTaskLogDAO) Insert(ctx context.Context, taskLog TaskLog) (int64, error) {
 	err := dao.db.WithContext(ctx).Create(&taskLog).Error
 	return taskLog.Id, err
@@ -21,12 +27,6 @@ func (dao *GORMTaskLogDAO) Insert(ctx context.Context, taskLog TaskLog) (int64, 
 
 func (dao *GORMTaskLogDAO) UpdateById(ctx context.Context, id int64, data CommonMap) error {
 	return dao.db.WithContext(ctx).Model(&TaskLog{}).Where("`id` = ?", id).Updates(data).Error
-}
-
-func NewTaskLogDAO(db *gorm.DB) TaskLogDAO {
-	return &GORMTaskLogDAO{
-		db: db,
-	}
 }
 
 type TaskLog struct {

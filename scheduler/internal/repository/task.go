@@ -15,11 +15,16 @@ type TaskRepository interface {
 	UpdateNextTime(ctx context.Context, id int64, t time.Time) error
 	UpdateUtime(ctx context.Context, id int64) error
 	Release(ctx context.Context, id int64) error
-	AddTask(ctx context.Context, j domain.Task) error
 }
 
 type PreemptTaskRepository struct {
 	dao dao.TaskDAO
+}
+
+func NewTaskRepository(dao dao.TaskDAO) TaskRepository {
+	return &PreemptTaskRepository{
+		dao: dao,
+	}
 }
 
 func (p *PreemptTaskRepository) Preempt(ctx context.Context) (domain.Task, error) {

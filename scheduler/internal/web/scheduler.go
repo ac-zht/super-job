@@ -49,3 +49,17 @@ func (h *Scheduler) Start(ctx *gin.Context) error {
 		}
 	}
 }
+
+func (h *Scheduler) ExecTask(ctx *gin.Context) {
+
+}
+
+func (h *Scheduler) Stop(ctx *gin.Context) {
+
+}
+
+func (h *Scheduler) RegisterRoutes(server *gin.Engine) {
+	ug := server.Group("/api/dispatch")
+	ug.GET("/task/:id", h.ExecTask)
+	ug.GET("/stop", h.Stop)
+}

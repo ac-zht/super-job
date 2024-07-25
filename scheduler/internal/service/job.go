@@ -32,13 +32,13 @@ type cronJobService struct {
 	refreshInterval time.Duration
 }
 
-func NenJobService(taskRepo repository.TaskRepository,
-	taskLogRepo repository.TaskLogRepository, notifySvc notify.Service) JobService {
+func NewJobService(taskRepo repository.TaskRepository,
+	taskLogRepo repository.TaskLogRepository, notifySvc notify.Service, refreshInterval time.Duration) JobService {
 	return &cronJobService{
 		taskRepo:        taskRepo,
 		taskLogRepo:     taskLogRepo,
 		notifySvc:       notifySvc,
-		refreshInterval: time.Second * 10,
+		refreshInterval: refreshInterval,
 	}
 }
 
@@ -66,14 +66,6 @@ func (c *cronJobService) Preempt(ctx context.Context) (domain.Task, error) {
 	return j, nil
 }
 
-func (c *cronJobService) ResetNextTime(ctx context.Context, task domain.Task) error {
-	t := task.Next(time.Now())
-	if !t.IsZero() {
-		return c.taskRepo.UpdateNextTime(ctx, task.Id, t)
-	}
-	return nil
-}
-
 func (c *cronJobService) CreateJob(task domain.Task) func(ctx context.Context) error {
 	handler := c.createHandler(task)
 	if handler == nil {
@@ -91,11 +83,19 @@ func (c *cronJobService) CreateJob(task domain.Task) func(ctx context.Context) e
 			exec = task.Command
 		}
 		zap.L().Info(fmt.Sprintf(" 开始执行任务#%s#命令-%s", task.Name, exec))
-		taskResult := c.execJob(ctx, handler, task, 1)
+		taskResult := c.execJob(ctx, handler, task, taskLogId)
 		zap.L().Info(fmt.Sprintf(" 任务完成#%s#命令-%s", task.Name, exec))
 		c.afterExecJob(ctx, taskLogId, task, taskResult)
 		return nil
 	}
+}
+
+func (c *cronJobService) ResetNextTime(ctx context.Context, task domain.Task) error {
+	t := task.Next(time.Now())
+	if !t.IsZero() {
+		return c.taskRepo.UpdateNextTime(ctx, task.Id, t)
+	}
+	return nil
 }
 
 func (c *cronJobService) createHandler(task domain.Task) domain.Handler {
@@ -165,9 +165,14 @@ type RPCHandler struct{}
 
 func (h *RPCHandler) Run(ctx context.Context, task domain.Task, jobUniqueId int64) (string, error) {
 	taskRequest := new(pb.TaskRequest)
-	taskRequest.Timeout = int32(task.Timeout)
-	taskRequest.Command = task.Command
+	taskRequest.Type = int32(task.Protocol)
 	taskRequest.Id = jobUniqueId
+	taskRequest.Timeout = int32(task.Timeout)
+	if task.Protocol == domain.TaskRPC {
+		taskRequest.Handler = task.ExecutorHandler
+	} else {
+		taskRequest.Command = task.Command
+	}
 	var (
 		output string
 		err    error
@@ -193,6 +198,10 @@ func (c *cronJobService) beforeExecJob(ctx context.Context, task domain.Task) in
 }
 
 func (c *cronJobService) afterExecJob(ctx context.Context, taskLogId int64, task domain.Task, taskResult domain.TaskResult) {
+	defer func() {
+		//释放任务
+		task.CancelFunc()
+	}()
 	//设置next_time
 	err := c.ResetNextTime(ctx, task)
 	if err != nil {

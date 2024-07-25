@@ -56,7 +56,7 @@ type TaskProtocol uint8
 const (
 	TaskHTTP  TaskProtocol = iota + 1 // HTTP
 	TaskRPC                           // RPC
-	TaskShell                         // 系统命令
+	TaskShell                         // 命令
 )
 
 func (t TaskProtocol) ToUint8() uint8 {

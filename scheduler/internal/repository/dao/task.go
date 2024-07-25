@@ -13,11 +13,16 @@ type TaskDAO interface {
 	UpdateNextTime(ctx context.Context, id int64, t time.Time) error
 	UpdateUtime(ctx context.Context, id int64) error
 	Release(ctx context.Context, id int64) error
-	Insert(ctx context.Context, j Task) error
 }
 
 type GORMTaskDAO struct {
 	db *gorm.DB
+}
+
+func NewTaskDAO(db *gorm.DB) TaskDAO {
+	return &GORMTaskDAO{
+		db: db,
+	}
 }
 
 func (dao *GORMTaskDAO) Preempt(ctx context.Context) (Task, error) {
