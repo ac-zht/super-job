@@ -23,7 +23,7 @@ type Task struct {
 	Command               string
 	ExecutorRouteStrategy string
 
-	Timeout       int64
+	Timeout       time.Duration
 	RetryTimes    int64
 	RetryInterval int64
 
@@ -82,12 +82,12 @@ const (
 	HttpPost
 )
 
-func (t HttpMethod) ToUint8() uint8 {
-	return uint8(t)
+func (h HttpMethod) ToUint8() uint8 {
+	return uint8(h)
 }
 
-func (t HttpMethod) ToString() string {
-	switch t {
+func (h HttpMethod) ToString() string {
+	switch h {
 	case HttpGet:
 		return "GET"
 	case HttpPost:
@@ -105,8 +105,8 @@ const (
 	OverKeywordNotification
 )
 
-func (t NotifyStatus) ToUint8() uint8 {
-	return uint8(t)
+func (n NotifyStatus) ToUint8() uint8 {
+	return uint8(n)
 }
 
 type NotifyType uint8
@@ -117,8 +117,20 @@ const (
 	WebhookNotification
 )
 
-func (t NotifyType) ToUint8() uint8 {
-	return uint8(t)
+func (n NotifyType) ToUint8() uint8 {
+	return uint8(n)
+}
+
+func (n NotifyType) ToString() string {
+	switch n {
+	case EmailNotification:
+		return "email"
+	case SlackNotification:
+		return "slack"
+	case WebhookNotification:
+		return "webhook"
+	}
+	return ""
 }
 
 type TaskResult struct {
@@ -131,7 +143,7 @@ type Handler interface {
 	Run(ctx context.Context, task Task, jobUniqueId int64) (string, error)
 }
 
-const HttpExecTimeout = 300
+const HttpExecTimeout = 300 * time.Second
 
 const (
 	SingleInstanceRun uint8 = iota

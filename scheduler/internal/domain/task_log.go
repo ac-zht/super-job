@@ -18,7 +18,7 @@ type TaskLog struct {
 	Command     string
 	ExecutorMsg string
 
-	Timeout    int64
+	Timeout    time.Duration
 	RetryTimes int64
 
 	StartTime time.Time

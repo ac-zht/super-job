@@ -10,7 +10,7 @@ import (
 
 type HttpClient struct {
 	Url     string
-	Timeout int64
+	Timeout time.Duration
 	Client  *http.Client
 	Req     *http.Request
 }
@@ -47,7 +47,7 @@ func (h *HttpClient) PostJson(body string) ResponseWrapper {
 func (h *HttpClient) request() ResponseWrapper {
 	wrapper := ResponseWrapper{StatusCode: 0, Body: "", Header: make(http.Header)}
 	if h.Timeout > 0 {
-		h.Client.Timeout = time.Duration(h.Timeout) * time.Second
+		h.Client.Timeout = h.Timeout
 	}
 	h.setRequestHeader()
 	resp, err := h.Client.Do(h.Req)

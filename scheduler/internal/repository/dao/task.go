@@ -94,7 +94,7 @@ type Task struct {
 
 	//失败重试策略
 	Timeout       int64
-	RetryTimes    int8
+	RetryTimes    int64
 	RetryInterval int64
 
 	//消息通知

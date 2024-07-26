@@ -39,7 +39,7 @@ func (repo *taskLogRepository) toEntity(taskLog domain.TaskLog) dao.TaskLog {
 		Protocol:      taskLog.Protocol,
 		Command:       taskLog.Command,
 		ExecutorMsg:   "",
-		Timeout:       taskLog.Timeout,
+		Timeout:       int64(taskLog.Timeout),
 		RetryTimes:    taskLog.RetryTimes,
 		StartTime:     taskLog.StartTime.UnixMilli(),
 		EndTime:       taskLog.EndTime.UnixMilli(),

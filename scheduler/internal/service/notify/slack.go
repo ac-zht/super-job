@@ -3,6 +3,7 @@ package notify
 import (
 	"context"
 	"fmt"
+	"github.com/ac-zht/gotools/option"
 	"github.com/ac-zht/super-job/scheduler/internal/domain"
 	"github.com/ac-zht/super-job/scheduler/internal/repository"
 	"github.com/ac-zht/super-job/scheduler/internal/service/http/client"
@@ -18,19 +19,45 @@ import (
 type Slack struct {
 	repo          repository.SettingRepository
 	httpClient    *client.HttpClient
-	timeout       int64
+	timeout       time.Duration
 	retryTimes    uint8
 	retryInterval time.Duration
 }
 
-func NewSlack(repo repository.SettingRepository, httpClient *client.HttpClient, timeout int64, retryTimes uint8, retryInterval time.Duration) *Slack {
-	return &Slack{
+func NewSlackNotify(repo repository.SettingRepository,
+	httpClient *client.HttpClient,
+	opts ...option.Option[Slack]) Notifiable {
+	slack := &Slack{
 		repo:          repo,
 		httpClient:    httpClient,
-		timeout:       timeout,
-		retryTimes:    retryTimes,
-		retryInterval: retryInterval,
+		timeout:       time.Second,
+		retryTimes:    3,
+		retryInterval: time.Second,
 	}
+	option.Apply[Slack](slack, opts...)
+	return slack
+}
+
+func WithTimeout(timeout time.Duration) option.Option[Slack] {
+	return func(service *Slack) {
+		service.timeout = timeout
+	}
+}
+
+func WithSlackRetryTimes(rt uint8) option.Option[Slack] {
+	return func(service *Slack) {
+		service.retryTimes = rt
+	}
+}
+
+func WithSlackRetryInterval(ri time.Duration) option.Option[Slack] {
+	return func(service *Slack) {
+		service.retryInterval = ri
+	}
+}
+
+func (s *Slack) Name() string {
+	return "slack"
 }
 
 func (s *Slack) Send(ctx context.Context, msg Message) {

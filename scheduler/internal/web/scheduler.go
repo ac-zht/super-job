@@ -2,9 +2,9 @@ package web
 
 import (
 	"context"
+	"github.com/ac-zht/gotools/option"
 	"github.com/ac-zht/gotools/pool"
 	"github.com/ac-zht/super-job/scheduler/internal/service"
-	"github.com/ac-zht/super-job/scheduler/pkg/logger"
 	"github.com/gin-gonic/gin"
 	"time"
 )
@@ -14,16 +14,28 @@ type Scheduler struct {
 	failInterval time.Duration
 	dbTimeout    time.Duration
 	quickPool    *pool.OnDemandBlockTaskPool
-	l            logger.Logger
 }
 
-func NewScheduler(svc service.JobService, interval, dt time.Duration, qp *pool.OnDemandBlockTaskPool, l logger.Logger) *Scheduler {
-	return &Scheduler{
+func NewScheduler(svc service.JobService, qp *pool.OnDemandBlockTaskPool, opts ...option.Option[Scheduler]) *Scheduler {
+	scheduler := &Scheduler{
 		svc:          svc,
-		failInterval: interval,
-		dbTimeout:    dt,
+		failInterval: time.Second,
+		dbTimeout:    time.Second,
 		quickPool:    qp,
-		l:            l,
+	}
+	option.Apply[Scheduler](scheduler, opts...)
+	return scheduler
+}
+
+func WithFailInterval(interval time.Duration) option.Option[Scheduler] {
+	return func(s *Scheduler) {
+		s.failInterval = interval
+	}
+}
+
+func WithDbTimeout(dt time.Duration) option.Option[Scheduler] {
+	return func(s *Scheduler) {
+		s.dbTimeout = dt
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/ac-zht/gotools/option"
 	"github.com/ac-zht/super-job/scheduler/internal/domain"
 	"go.uber.org/zap"
 	"html/template"
@@ -13,31 +14,51 @@ import (
 type Message map[string]interface{}
 
 type Notifiable interface {
+	Name() string
 	Send(ctx context.Context, msg Message)
 }
 
-type Service struct {
-	mail    Mail
-	slack   Slack
-	webhook Webhook
-	queue   chan Message
+type Service interface {
+	Push(msg Message)
+	Run(ctx context.Context)
 }
 
-func NewService(capacity int, mail Mail, slack Slack, webhook Webhook) *Service {
-	return &Service{
-		queue:   make(chan Message, capacity),
-		mail:    mail,
-		slack:   slack,
-		webhook: webhook,
+type NtfService struct {
+	Channels map[string]Notifiable
+	Queue    chan Message
+}
+
+func NewService(opts ...option.Option[NtfService]) Service {
+	ntfService := &NtfService{
+		Channels: make(map[string]Notifiable),
+		Queue:    make(chan Message, 100),
+	}
+	option.Apply[NtfService](ntfService, opts...)
+	return ntfService
+}
+
+func WithChannels(nts ...Notifiable) option.Option[NtfService] {
+	return func(service *NtfService) {
+		channels := make(map[string]Notifiable)
+		for _, v := range nts {
+			channels[v.Name()] = v
+		}
+		service.Channels = channels
 	}
 }
 
-func (s *Service) Push(msg Message) {
-	s.queue <- msg
+func WithQueueCapacity(n int) option.Option[NtfService] {
+	return func(service *NtfService) {
+		service.Queue = make(chan Message, n)
+	}
 }
 
-func (s *Service) Run(ctx context.Context) {
-	for msg := range s.queue {
+func (s *NtfService) Push(msg Message) {
+	s.Queue <- msg
+}
+
+func (s *NtfService) Run(ctx context.Context) {
+	for msg := range s.Queue {
 		taskType, taskTypeOk := msg["task_type"]
 		_, taskReceiverIdOk := msg["task_receiver_id"]
 		_, nameOk := msg["name"]
@@ -49,14 +70,11 @@ func (s *Service) Run(ctx context.Context) {
 		}
 		msg["content"] = fmt.Sprintf("============\n============\n============\n任务名称: %s\n状态: %s\n输出:\n %s\n", msg["name"], msg["status"], msg["output"])
 		zap.L().Debug(fmt.Sprintf("%+v", msg))
-		switch taskType.(domain.NotifyType) {
-		case domain.EmailNotification:
-			go s.mail.Send(ctx, msg)
-		case domain.SlackNotification:
-			go s.slack.Send(ctx, msg)
-		case domain.WebhookNotification:
-			go s.webhook.Send(ctx, msg)
+		if _, existChannel := s.Channels[taskType.(domain.NotifyType).ToString()]; !existChannel {
+			zap.L().Error(fmt.Sprintf("#notify#通知渠道不存在#%+v", msg))
+			continue
 		}
+		go s.Channels[taskType.(domain.NotifyType).ToString()].Send(ctx, msg)
 		time.Sleep(time.Second)
 	}
 }

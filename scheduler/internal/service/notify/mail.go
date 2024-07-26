@@ -3,6 +3,7 @@ package notify
 import (
 	"context"
 	"fmt"
+	"github.com/ac-zht/gotools/option"
 	"github.com/ac-zht/super-job/scheduler/internal/domain"
 	"github.com/ac-zht/super-job/scheduler/internal/repository"
 	"github.com/ac-zht/super-job/scheduler/pkg/utils"
@@ -19,12 +20,29 @@ type Mail struct {
 	retryInterval time.Duration
 }
 
-func NewMail(repo repository.SettingRepository, retryTimes uint8, retryInterval time.Duration) *Mail {
-	return &Mail{
+func NewMailNotify(repo repository.SettingRepository, opts ...option.Option[Mail]) Notifiable {
+	mail := &Mail{
 		repo:          repo,
-		retryTimes:    retryTimes,
-		retryInterval: retryInterval,
+		retryTimes:    3,
+		retryInterval: time.Second,
 	}
+	option.Apply[Mail](mail, opts...)
+	return mail
+}
+func WithMailRetryTimes(rt uint8) option.Option[Mail] {
+	return func(service *Mail) {
+		service.retryTimes = rt
+	}
+}
+
+func WithMailRetryInterval(ri time.Duration) option.Option[Mail] {
+	return func(service *Mail) {
+		service.retryInterval = ri
+	}
+}
+
+func (m *Mail) Name() string {
+	return "email"
 }
 
 func (m *Mail) Send(ctx context.Context, msg Message) {
