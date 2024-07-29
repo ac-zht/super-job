@@ -42,7 +42,7 @@ func main() {
 	initLogger()
 	grpcServer := grpc.NewServer()
 	taskSvc.RegisterTaskServer(grpcServer, &Server{})
-	listen, err := net.Listen("tcp", ":5000")
+	listen, err := net.Listen("tcp", ":9300")
 	if err != nil {
 		zap.L().Fatal(fmt.Sprintf("failed to listen: %v", err))
 	}

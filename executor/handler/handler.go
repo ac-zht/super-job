@@ -3,16 +3,18 @@ package handler
 import taskSvc "github.com/ac-zht/super-job/executor/proto"
 
 type JobHandler interface {
+	Name() string
 	Run() (*taskSvc.TaskResponse, error)
 }
 
 var Handlers = make(map[string]JobHandler)
 
-func RegisterJobHandler(name string, h JobHandler) {
-	Handlers[name] = h
+func RegisterJobHandler(h JobHandler) {
+	Handlers[h.Name()] = h
 }
 
 func init() {
-	demo := DemoJobHandler{}
-	RegisterJobHandler("demoJobHandler", demo)
+	RegisterJobHandler(
+		&DemoJobHandler{},
+	)
 }

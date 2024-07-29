@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/ac-zht/gotools/option"
 	"github.com/ac-zht/super-job/scheduler/internal/domain"
 	"go.uber.org/zap"
 	"html/template"
@@ -28,29 +27,17 @@ type NtfService struct {
 	Queue    chan Message
 }
 
-func NewService(opts ...option.Option[NtfService]) Service {
-	ntfService := &NtfService{
+func NewService(queueCap int, nts ...Notifiable) Service {
+	service := &NtfService{
 		Channels: make(map[string]Notifiable),
-		Queue:    make(chan Message, 100),
+		Queue:    make(chan Message, queueCap),
 	}
-	option.Apply[NtfService](ntfService, opts...)
-	return ntfService
-}
-
-func WithChannels(nts ...Notifiable) option.Option[NtfService] {
-	return func(service *NtfService) {
-		channels := make(map[string]Notifiable)
-		for _, v := range nts {
-			channels[v.Name()] = v
-		}
-		service.Channels = channels
+	channels := make(map[string]Notifiable)
+	for _, v := range nts {
+		channels[v.Name()] = v
 	}
-}
-
-func WithQueueCapacity(n int) option.Option[NtfService] {
-	return func(service *NtfService) {
-		service.Queue = make(chan Message, n)
-	}
+	service.Channels = channels
+	return service
 }
 
 func (s *NtfService) Push(msg Message) {

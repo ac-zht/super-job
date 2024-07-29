@@ -20,7 +20,7 @@ import NotificationEmail from '../pages/system/notification/email'
 import NotificationSlack from '../pages/system/notification/slack'
 import NotificationWebhook from '../pages/system/notification/webhook'
 
-// import Install from '../pages/install/index'
+import Install from '../pages/install/index'
 import LoginLog from '../pages/system/loginLog'
 
 Vue.use(Router)
@@ -39,15 +39,15 @@ const router = new Router({
       path: '/',
       redirect: '/task'
     },
-    // {
-    //   path: '/install',
-    //   name: 'install',
-    //   component: Install,
-    //   meta: {
-    //     noLogin: true,
-    //     noNeedAdmin: true
-    //   }
-    // },
+    {
+      path: '/install',
+      name: 'install',
+      component: Install,
+      meta: {
+        noLogin: true,
+        noNeedAdmin: true
+      }
+    },
     {
       path: '/task',
       name: 'task-list',

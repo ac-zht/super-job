@@ -8,7 +8,11 @@ import (
 type DemoJobHandler struct {
 }
 
-func (d DemoJobHandler) Run() (*taskSvc.TaskResponse, error) {
+func (d *DemoJobHandler) Name() string {
+	return "demoJobHandler"
+}
+
+func (d *DemoJobHandler) Run() (*taskSvc.TaskResponse, error) {
 	fmt.Println("DemoJobHandler is executing")
 	return &taskSvc.TaskResponse{
 		Output: "success",

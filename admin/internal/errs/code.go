@@ -11,6 +11,10 @@ const (
 	SettingInternalServerError = 12000
 	SettingInvalidInput        = 12001
 
-	InstallInternalServerError = 13000
-	InstallOccurred            = 13001
+	InstallInternalServerError  = 13000
+	InstallOccurred             = 13001
+	InstallPasswordInconsistent = 13002
+
+	UserInternalServerError = 14000
+	UserInvalidInput        = 14001
 )

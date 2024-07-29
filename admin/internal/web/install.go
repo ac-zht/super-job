@@ -25,6 +25,16 @@ func (h *InstallHandler) Store(ctx *gin.Context) {
 		})
 		return
 	}
+	var req InstallReq
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+	if req.AdminPassword != req.ConfirmAdminPassword {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: errs.InstallPasswordInconsistent,
+		})
+		return
+	}
 	err := h.svc.Store(ctx)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
@@ -32,6 +42,8 @@ func (h *InstallHandler) Store(ctx *gin.Context) {
 		})
 		return
 	}
+	//创建管理员账号
+	//创建安装锁
 	err = service.CreateInstallLock()
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
@@ -47,7 +59,10 @@ func (h *InstallHandler) Store(ctx *gin.Context) {
 }
 
 func (h *InstallHandler) Status(ctx *gin.Context) {
-
+	installed, _ := h.svc.Status(ctx)
+	ctx.JSON(http.StatusOK, ginx.Result{
+		Data: installed,
+	})
 }
 
 func (h *InstallHandler) RegisterRoutes(server *gin.Engine) {

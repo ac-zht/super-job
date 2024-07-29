@@ -39,7 +39,7 @@ func WithDbTimeout(dt time.Duration) option.Option[Scheduler] {
 	}
 }
 
-func (h *Scheduler) Start(ctx *gin.Context) error {
+func (h *Scheduler) Start(ctx context.Context) error {
 	for {
 		if ctx.Err() != nil {
 			return ctx.Err()
