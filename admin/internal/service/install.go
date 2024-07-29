@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
+	"github.com/ac-zht/super-job/admin/internal/domain"
 	"github.com/ac-zht/super-job/admin/internal/repository"
 )
 
 type InstallService interface {
-	Store(ctx context.Context) error
+	Store(ctx context.Context, ins domain.Installation) error
 	Status(ctx context.Context) (bool, error)
 }
 
@@ -20,7 +21,7 @@ func NewInstallService(setRepo repository.SettingRepository) InstallService {
 	}
 }
 
-func (svc *installService) Store(ctx context.Context) error {
+func (svc *installService) Store(ctx context.Context, install domain.Installation) error {
 	//ping数据库
 	//根据提交的消息写数据库配置文件
 	//读取文件到内存
@@ -34,7 +35,15 @@ func (svc *installService) Store(ctx context.Context) error {
 	return nil
 }
 
-func (svc *installService) pingDb() error {
+func (svc *installService) pingDB(ins domain.Installation) error {
+	var s domain.Setting
+	s.DB.Host = ins.DbType
+	s.DB.Port = ins.DbPort
+	s.DB.User = ins.DbUsername
+	s.DB.Password = ins.DbPassword
+	s.DB.Database = ins.DbName
+	s.DB.Charset = "utf8"
+
 	return nil
 }
 

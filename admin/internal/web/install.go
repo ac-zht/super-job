@@ -1,6 +1,7 @@
 package web
 
 import (
+	"github.com/ac-zht/super-job/admin/internal/domain"
 	"github.com/ac-zht/super-job/admin/internal/errs"
 	"github.com/ac-zht/super-job/admin/internal/service"
 	"github.com/ac-zht/super-job/admin/pkg/ginx"
@@ -25,7 +26,7 @@ func (h *InstallHandler) Store(ctx *gin.Context) {
 		})
 		return
 	}
-	var req InstallReq
+	var req domain.Installation
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
@@ -35,7 +36,7 @@ func (h *InstallHandler) Store(ctx *gin.Context) {
 		})
 		return
 	}
-	err := h.svc.Store(ctx)
+	err := h.svc.Store(ctx, req)
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: errs.InstallInternalServerError,
