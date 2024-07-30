@@ -1,5 +1,7 @@
 package domain
 
+const DefaultSection = "default"
+
 type Installation struct {
 	DbType               string `json:"db_type,omitempty"`
 	DbHost               string `json:"db_host,omitempty"`
@@ -16,6 +18,7 @@ type Installation struct {
 
 type Setting struct {
 	DB struct {
+		Engine       string
 		Host         string
 		Port         int
 		User         string

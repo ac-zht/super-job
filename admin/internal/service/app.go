@@ -9,7 +9,11 @@ import (
 )
 
 var (
-	ConfDir   string
+	//ConfDir 配置文件目录
+	ConfDir string
+	//AppConfig 应用配置文件
+	AppConfig string
+	//Installed 应用是否已安装
 	Installed bool
 )
 
@@ -19,6 +23,7 @@ func InitEnv() {
 		zap.L().Fatal(err.Error())
 	}
 	ConfDir = filepath.Join(AppDir, "/conf")
+	AppConfig = filepath.Join(ConfDir, "/app.ini")
 	createDirIfNotExists(ConfDir)
 	Installed = IsInstalled()
 }
