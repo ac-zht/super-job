@@ -29,4 +29,16 @@ type Setting struct {
 		MaxIdleConns int
 		MaxOpenConns int
 	}
+	AllowIps      string
+	AppName       string
+	ApiKey        string
+	ApiSecret     string
+	ApiSignEnable bool
+
+	EnableTLS bool
+	CAFile    string
+	CertFile  string
+	KeyFile   string
+
+	AuthSecret string
 }

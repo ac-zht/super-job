@@ -3,6 +3,7 @@ package utils
 import (
 	crand "crypto/rand"
 	"fmt"
+	"github.com/ac-zht/super-job/admin/internal/service"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -21,11 +22,22 @@ func FileExist(file string) bool {
 }
 
 func WorkDir() (string, error) {
+	if service.App.Mode == service.DEV {
+		return CurrentDir()
+	}
+	return ExecDir()
+}
+
+func ExecDir() (string, error) {
 	execPath, err := os.Executable()
 	if err != nil {
 		return "", err
 	}
 	return filepath.Dir(execPath), nil
+}
+
+func CurrentDir() (string, error) {
+	return os.Getwd()
 }
 
 func RandAuthToken() string {

@@ -2,34 +2,33 @@ package service
 
 import (
 	"fmt"
+	"github.com/ac-zht/super-job/admin/internal/repository"
 	"github.com/ac-zht/super-job/admin/pkg/utils"
 	"go.uber.org/zap"
 	"os"
 	"path/filepath"
 )
 
-var (
-	//ConfDir 配置文件目录
-	ConfDir string
-	//AppConfig 应用配置文件
-	AppConfig string
-	//Installed 应用是否已安装
-	Installed bool
+const (
+	DEV  = "development"
+	PROD = "production"
+	TEST = "test"
 )
 
 func InitEnv() {
+	repository.App.Mode = DEV
 	AppDir, err := utils.WorkDir()
 	if err != nil {
 		zap.L().Fatal(err.Error())
 	}
-	ConfDir = filepath.Join(AppDir, "/conf")
-	AppConfig = filepath.Join(ConfDir, "/app.ini")
-	createDirIfNotExists(ConfDir)
-	Installed = IsInstalled()
+	repository.App.ConfDir = filepath.Join(AppDir, "/conf")
+	repository.App.Config = filepath.Join(repository.App.ConfDir, "/app.ini")
+	createDirIfNotExists(repository.App.ConfDir)
+	repository.App.Installed = IsInstalled()
 }
 
 func IsInstalled() bool {
-	_, err := os.Stat(filepath.Join(ConfDir, "/install.lock"))
+	_, err := os.Stat(filepath.Join(repository.App.ConfDir, "/install.lock"))
 	if os.IsNotExist(err) {
 		return false
 	}
@@ -37,7 +36,7 @@ func IsInstalled() bool {
 }
 
 func CreateInstallLock() error {
-	_, err := os.Create(filepath.Join(ConfDir, "/install.lock"))
+	_, err := os.Create(filepath.Join(repository.App.ConfDir, "/install.lock"))
 	if err != nil {
 		zap.L().Error("创建安装锁文件conf/install.lock失败")
 	}

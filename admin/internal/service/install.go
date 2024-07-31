@@ -2,12 +2,10 @@ package service
 
 import (
 	"context"
-	"errors"
 	"github.com/ac-zht/super-job/admin/internal/domain"
 	"github.com/ac-zht/super-job/admin/internal/repository"
+	"github.com/ac-zht/super-job/admin/internal/repository/dao"
 	"github.com/ac-zht/super-job/admin/pkg/utils"
-	"github.com/go-sql-driver/mysql"
-	"github.com/lib/pq"
 	"strconv"
 )
 
@@ -42,7 +40,15 @@ func (svc *installService) Store(ctx context.Context, install domain.Installatio
 		return err
 	}
 	//读取文件到内存
-	//创建数据库
+	appConfig, err := svc.webSettingRepo.Read(repository.App.Config)
+	if err != nil {
+		return err
+	}
+	repository.App.Setting = appConfig
+	//创建全局db连接
+	dao.SetGlobalDB(svc.installRepo.CreateDB())
+	//创建数据表
+
 	//生成表
 	//初始化配置表字段
 	err = svc.settingRepo.InitBasicField(ctx)
@@ -61,33 +67,7 @@ func (svc *installService) pingDB(ctx context.Context, ins domain.Installation) 
 	s.DB.Password = ins.DbPassword
 	s.DB.Database = ins.DbName
 	s.DB.Charset = "utf8"
-	db, err := svc.installRepo.CreateTmpDB(&s)
-	if err != nil {
-		return err
-	}
-	sqlDB, err := db.DB()
-	if err != nil {
-		return err
-	}
-	defer sqlDB.Close()
-	err = sqlDB.Ping()
-	if err != nil {
-		switch s.DB.Engine {
-		case "mysql":
-			mysqlError, ok := err.(*mysql.MySQLError)
-			if ok && mysqlError.Number == 1049 {
-				err = errors.New("database not exist")
-			}
-			return err
-		case "postgres":
-			pgError, ok := err.(*pq.Error)
-			if ok && pgError.Code == "3D000" {
-				err = errors.New("database not exist")
-			}
-			return err
-		}
-	}
-	return err
+	return svc.installRepo.PingDB(&s)
 }
 
 func (svc *installService) writeConfig(ctx context.Context, ins domain.Installation) error {
@@ -107,15 +87,15 @@ func (svc *installService) writeConfig(ctx context.Context, ins domain.Installat
 		"api.key", "",
 		"api.secret", "",
 		"enable_tls", "false",
-		"concurrency.queue", "500",
+		//"concurrency.queue", "500",
 		"auth_secret", utils.RandAuthToken(),
 		"ca_file", "",
 		"cert_file", "",
 		"key_file", "",
 	}
-	return svc.webSettingRepo.Write(dbConfig, AppConfig)
+	return svc.webSettingRepo.Write(dbConfig, App.Config)
 }
 
 func (svc *installService) Status(ctx context.Context) (bool, error) {
-	return Installed, nil
+	return App.Installed, nil
 }

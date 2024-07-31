@@ -2,7 +2,6 @@ package dao
 
 import (
 	"context"
-	"gorm.io/gorm"
 	"time"
 )
 
@@ -14,18 +13,18 @@ type ExecutorDAO interface {
 }
 
 type GORMExecutorDAO struct {
-	db *gorm.DB
+	BaseModel
 }
 
-func NewExecutorDAO(db *gorm.DB) ExecutorDAO {
+func NewExecutorDAO(db BaseModel) ExecutorDAO {
 	return &GORMExecutorDAO{
-		db: db,
+		BaseModel: db,
 	}
 }
 
 func (dao *GORMExecutorDAO) List(ctx context.Context, offset, limit int) ([]Executor, error) {
 	var execs []Executor
-	err := dao.db.WithContext(ctx).
+	err := dao.DB().WithContext(ctx).
 		Offset(offset).
 		Limit(limit).
 		Find(&execs).Error
@@ -36,16 +35,16 @@ func (dao *GORMExecutorDAO) Insert(ctx context.Context, exec Executor) (int64, e
 	now := time.Now().UnixMilli()
 	exec.Ctime = now
 	exec.Utime = now
-	err := dao.db.WithContext(ctx).Create(&exec).Error
+	err := dao.DB().WithContext(ctx).Create(&exec).Error
 	return exec.Id, err
 }
 
 func (dao *GORMExecutorDAO) Update(ctx context.Context, exec Executor) error {
-	return dao.db.WithContext(ctx).Updates(&exec).Error
+	return dao.DB().WithContext(ctx).Updates(&exec).Error
 }
 
 func (dao *GORMExecutorDAO) Delete(ctx context.Context, id int64) error {
-	return dao.db.WithContext(ctx).Where("id = ?", id).Delete(&Executor{}).Error
+	return dao.DB().WithContext(ctx).Where("id = ?", id).Delete(&Executor{}).Error
 }
 
 type Executor struct {
