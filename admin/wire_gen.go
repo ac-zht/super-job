@@ -7,6 +7,7 @@
 package main
 
 import (
+	"github.com/ac-zht/gotools/option"
 	"github.com/ac-zht/super-job/admin/internal/repository"
 	"github.com/ac-zht/super-job/admin/internal/repository/dao"
 	"github.com/ac-zht/super-job/admin/internal/service"
@@ -17,22 +18,44 @@ import (
 
 // Injectors from wire.go:
 
+func InitWebSettingService(repo repository.WebSettingRepository) service.WebSettingService {
+	webSettingService := service.NewWebSettingService(repo)
+	return webSettingService
+}
+
+func InitInstallService(base dao.BaseModel, setRepo repository.SettingRepository, webSettingRepo repository.WebSettingRepository, userRepo repository.UserRepository) service.InstallService {
+	installDAO := dao.NewInstallDAO(base)
+	installRepository := repository.NewInstallRepository(installDAO)
+	installService := service.NewInstallService(setRepo, installRepository, webSettingRepo, userRepo)
+	return installService
+}
+
 func InitWeb() *gin.Engine {
-	db := ioc.InitDB()
-	taskDAO := dao.NewTaskDAO(db)
+	v := NewBaseModelOption()
+	baseModel := dao.NewBaseModel(v...)
+	taskDAO := dao.NewTaskDAO(baseModel)
 	taskRepository := repository.NewTaskRepository(taskDAO)
 	taskService := service.NewTaskService(taskRepository)
 	taskHandler := web.NewTaskHandler(taskService)
-	executorDAO := dao.NewExecutorDAO(db)
+	executorDAO := dao.NewExecutorDAO(baseModel)
 	executorRepository := repository.NewExecutorRepository(executorDAO)
 	executorService := service.NewExecutorService(executorRepository)
 	executorHandler := web.NewExecutorHandler(executorService)
-	settingDAO := dao.NewSettingDAO(db)
+	settingDAO := dao.NewSettingDAO(baseModel)
 	settingRepository := repository.NewSettingRepository(settingDAO)
 	settingService := service.NewSettingService(settingRepository)
 	settingHandler := web.NewSettingHandler(settingService)
-	installService := service.NewInstallService(settingRepository)
+	webSettingRepository := repository.NewWebSettingRepository()
+	userDAO := dao.NewUserDAO(baseModel)
+	userRepository := repository.NewUserRepository(userDAO)
+	installService := InitInstallService(baseModel, settingRepository, webSettingRepository, userRepository)
 	installHandler := web.NewInstallHandler(installService)
 	engine := ioc.InitWebServer(taskHandler, executorHandler, settingHandler, installHandler)
 	return engine
+}
+
+// wire.go:
+
+func NewBaseModelOption() []option.Option[dao.BaseDbModel] {
+	return []option.Option[dao.BaseDbModel]{func(m *dao.BaseDbModel) {}}
 }

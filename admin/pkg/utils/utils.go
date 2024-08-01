@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"crypto/md5"
 	crand "crypto/rand"
 	"fmt"
+	"github.com/ac-zht/super-job/admin/internal/repository"
 	"github.com/ac-zht/super-job/admin/internal/service"
 	"math/rand"
 	"os"
@@ -22,7 +24,7 @@ func FileExist(file string) bool {
 }
 
 func WorkDir() (string, error) {
-	if service.App.Mode == service.DEV {
+	if repository.App.Mode == service.DEV {
 		return CurrentDir()
 	}
 	return ExecDir()
@@ -62,4 +64,10 @@ func RandString(length int64) string {
 	}
 
 	return string(result)
+}
+
+func Md5(str string) string {
+	m := md5.New()
+	m.Write([]byte(str))
+	return fmt.Sprintf("%x", m.Sum(nil))
 }

@@ -17,7 +17,6 @@ type TaskService interface {
 
 type taskService struct {
 	repo repository.TaskRepository
-	//l    logger.Logger
 }
 
 func NewTaskService(repo repository.TaskRepository) TaskService {

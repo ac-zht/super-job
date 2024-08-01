@@ -16,9 +16,9 @@ type GORMExecutorDAO struct {
 	BaseModel
 }
 
-func NewExecutorDAO(db BaseModel) ExecutorDAO {
+func NewExecutorDAO(base BaseModel) ExecutorDAO {
 	return &GORMExecutorDAO{
-		BaseModel: db,
+		BaseModel: base,
 	}
 }
 

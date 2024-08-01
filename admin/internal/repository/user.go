@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/ac-zht/super-job/admin/internal/domain"
 	"github.com/ac-zht/super-job/admin/internal/repository/dao"
+	"github.com/ac-zht/super-job/admin/pkg/utils"
 	"github.com/ecodeclub/ekit/slice"
 )
 
@@ -17,6 +18,12 @@ type UserRepository interface {
 
 type userRepository struct {
 	dao dao.UserDAO
+}
+
+func NewUserRepository(dao dao.UserDAO) UserRepository {
+	return &userRepository{
+		dao: dao,
+	}
 }
 
 func (repo *userRepository) List(ctx context.Context, offset, limit int) ([]domain.User, error) {
@@ -35,6 +42,9 @@ func (repo *userRepository) GetById(ctx context.Context, id int64) (domain.User,
 }
 
 func (repo *userRepository) Create(ctx context.Context, u domain.User) (int64, error) {
+	u.Status = dao.Enabled
+	u.Salt = repo.generateSalt()
+	u.Password = repo.encryptPassword(u.Password, u.Salt)
 	return repo.dao.Insert(ctx, repo.toEntity(u))
 }
 
@@ -46,6 +56,14 @@ func (repo *userRepository) Delete(ctx context.Context, id int64) error {
 	return repo.dao.Delete(ctx, id)
 }
 
+func (repo *userRepository) generateSalt() string {
+	return utils.RandString(dao.PasswordSaltLength)
+}
+
+func (repo *userRepository) encryptPassword(password, salt string) string {
+	return utils.Md5(password + salt)
+}
+
 func (repo *userRepository) toEntity(u domain.User) dao.User {
 	return dao.User{
 		Id:       u.Id,
@@ -53,6 +71,7 @@ func (repo *userRepository) toEntity(u domain.User) dao.User {
 		Email:    u.Email,
 		Password: u.Password,
 		Status:   u.Status,
+		Salt:     u.Salt,
 	}
 }
 

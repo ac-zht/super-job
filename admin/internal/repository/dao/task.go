@@ -17,18 +17,18 @@ type TaskDAO interface {
 }
 
 type GORMTaskDAO struct {
-	db *gorm.DB
+	BaseModel
 }
 
-func NewTaskDAO(db *gorm.DB) TaskDAO {
+func NewTaskDAO(base BaseModel) TaskDAO {
 	return &GORMTaskDAO{
-		db: db,
+		BaseModel: base,
 	}
 }
 
 func (dao *GORMTaskDAO) List(ctx context.Context, offset, limit int) ([]Task, error) {
 	var tasks []Task
-	err := dao.db.WithContext(ctx).
+	err := dao.DB().WithContext(ctx).
 		Preload("Executor").
 		Offset(offset).
 		Limit(limit).
@@ -38,25 +38,25 @@ func (dao *GORMTaskDAO) List(ctx context.Context, offset, limit int) ([]Task, er
 
 func (dao *GORMTaskDAO) GetById(ctx context.Context, id int64) (Task, error) {
 	var task Task
-	err := dao.db.WithContext(ctx).First(&task, id).Error
+	err := dao.DB().WithContext(ctx).First(&task, id).Error
 	return task, err
 }
 
 func (dao *GORMTaskDAO) Delete(ctx context.Context, id int64) error {
-	return dao.db.WithContext(ctx).Where("id = ?", id).Delete(&Task{}).Error
+	return dao.DB().WithContext(ctx).Where("id = ?", id).Delete(&Task{}).Error
 }
 
 func (dao *GORMTaskDAO) Insert(ctx context.Context, j Task) (int64, error) {
 	now := time.Now().UnixMilli()
 	j.Ctime = now
 	j.Utime = now
-	err := dao.db.WithContext(ctx).Create(&j).Error
+	err := dao.DB().WithContext(ctx).Create(&j).Error
 	return j.Id, err
 }
 
 func (dao *GORMTaskDAO) Update(ctx context.Context, j Task) error {
 	j.Utime = time.Now().UnixMilli()
-	return dao.db.WithContext(ctx).Updates(&j).Error
+	return dao.DB().WithContext(ctx).Updates(&j).Error
 }
 
 type Task struct {

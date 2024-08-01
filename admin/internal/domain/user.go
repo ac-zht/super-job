@@ -7,4 +7,5 @@ type User struct {
 	Password string
 	IsAdmin  uint8
 	Status   uint8
+	Salt     string
 }

@@ -2,7 +2,6 @@ package dao
 
 import (
 	"context"
-	"gorm.io/gorm"
 	"time"
 )
 
@@ -15,18 +14,18 @@ type UserDAO interface {
 }
 
 type GORMUserDAO struct {
-	db *gorm.DB
+	BaseModel
 }
 
-func NewUserDAO(db *gorm.DB) UserDAO {
+func NewUserDAO(base BaseModel) UserDAO {
 	return &GORMUserDAO{
-		db: db,
+		BaseModel: base,
 	}
 }
 
 func (dao *GORMUserDAO) List(ctx context.Context, offset, limit int) ([]User, error) {
 	var users []User
-	err := dao.db.WithContext(ctx).
+	err := dao.DB().WithContext(ctx).
 		Offset(offset).
 		Limit(limit).
 		Find(&users).Error
@@ -35,7 +34,7 @@ func (dao *GORMUserDAO) List(ctx context.Context, offset, limit int) ([]User, er
 
 func (dao *GORMUserDAO) GetById(ctx context.Context, id int64) (User, error) {
 	var u User
-	err := dao.db.WithContext(ctx).First(&u, id).Error
+	err := dao.DB().WithContext(ctx).First(&u, id).Error
 	return u, err
 }
 
@@ -43,17 +42,17 @@ func (dao *GORMUserDAO) Insert(ctx context.Context, u User) (int64, error) {
 	now := time.Now().UnixMilli()
 	u.Ctime = now
 	u.Utime = now
-	err := dao.db.WithContext(ctx).Create(&u).Error
+	err := dao.DB().WithContext(ctx).Create(&u).Error
 	return u.Id, err
 }
 
 func (dao *GORMUserDAO) Update(ctx context.Context, u User) error {
 	u.Utime = time.Now().UnixMilli()
-	return dao.db.WithContext(ctx).Updates(&u).Error
+	return dao.DB().WithContext(ctx).Updates(&u).Error
 }
 
 func (dao *GORMUserDAO) Delete(ctx context.Context, id int64) error {
-	return dao.db.WithContext(ctx).Where("id = ?", id).Delete(&User{}).Error
+	return dao.DB().WithContext(ctx).Where("id = ?", id).Delete(&User{}).Error
 }
 
 type User struct {
@@ -67,3 +66,10 @@ type User struct {
 	Ctime    int64
 	Utime    int64
 }
+
+const (
+	Disabled uint8 = iota
+	Enabled
+)
+
+const PasswordSaltLength = 6

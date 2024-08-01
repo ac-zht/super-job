@@ -37,6 +37,13 @@ type InstallRepository interface {
 }
 
 type installRepository struct {
+	dao dao.InstallDAO
+}
+
+func NewInstallRepository(dao dao.InstallDAO) InstallRepository {
+	return &installRepository{
+		dao: dao,
+	}
 }
 
 func (repo *installRepository) PingDB(setting *domain.Setting) error {
@@ -114,6 +121,6 @@ func (repo *installRepository) connectDB(setting *domain.Setting) (*gorm.DB, err
 	return nil, errors.New("engine error")
 }
 
-func (repo *installRepository) InitTables(db *gorm.DB) error {
-	return dao.InitTables(db)
+func (repo *installRepository) InitTables() error {
+	return repo.dao.InitTables()
 }

@@ -20,7 +20,7 @@ func NewInstallHandler(svc service.InstallService) *InstallHandler {
 }
 
 func (h *InstallHandler) Store(ctx *gin.Context) {
-	if service.Installed {
+	if service.App.Installed {
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: errs.InstallOccurred,
 		})
@@ -43,17 +43,6 @@ func (h *InstallHandler) Store(ctx *gin.Context) {
 		})
 		return
 	}
-	//创建管理员账号
-	//创建安装锁
-	err = service.CreateInstallLock()
-	if err != nil {
-		ctx.JSON(http.StatusOK, ginx.Result{
-			Code: errs.InstallInternalServerError,
-			Msg:  "创建文件安装锁失败",
-		})
-		return
-	}
-	service.Installed = true
 	ctx.JSON(http.StatusOK, ginx.Result{
 		Msg: "安装成功",
 	})
