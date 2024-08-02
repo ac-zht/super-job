@@ -6,7 +6,7 @@ import (
 )
 
 type SettingDAO interface {
-	FindByKey(ctx context.Context, code string) ([]Setting, error)
+	FindByCode(ctx context.Context, code string) ([]Setting, error)
 	Insert(ctx context.Context, setting Setting) (int64, error)
 	UpdateByCodeKey(ctx context.Context, code, key, value string) error
 	Update(ctx context.Context, setting Setting) (int64, error)
@@ -23,7 +23,7 @@ func NewSettingDAO(base BaseModel) SettingDAO {
 	}
 }
 
-func (dao *GORMSettingDAO) FindByKey(ctx context.Context, code string) ([]Setting, error) {
+func (dao *GORMSettingDAO) FindByCode(ctx context.Context, code string) ([]Setting, error) {
 	var settings []Setting
 	err := dao.DB().WithContext(ctx).Where("`code` = ?", code).Find(&settings).Error
 	return settings, err

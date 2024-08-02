@@ -13,22 +13,33 @@ import (
 	"github.com/google/wire"
 )
 
-func InitWebSettingService(repo repository.WebSettingRepository) service.WebSettingService {
+func InitWebSettingService() service.WebSettingService {
 	wire.Build(
+		commonProvider,
 		service.NewWebSettingService,
 	)
 	return &service.WebSettingSvc{}
 }
 
-func InitInstallService(base dao.BaseModel,
-	setRepo repository.SettingRepository,
-	webSettingRepo repository.WebSettingRepository,
-	userRepo repository.UserRepository) service.InstallService {
-	wire.Build(
-		dao.NewInstallDAO,
-		repository.NewInstallRepository,
-		service.NewInstallService,
-	)
+var commonProvider = wire.NewSet(
+	NewBaseModelOption,
+	dao.NewBaseModel,
+
+	dao.NewSettingDAO,
+	dao.NewUserDAO,
+	dao.NewInstallDAO,
+
+	repository.NewSettingRepository,
+	repository.NewUserRepository,
+	repository.NewInstallRepository,
+
+	repository.NewWebSettingRepository,
+
+	service.NewInstallService,
+)
+
+func InitInstallService() service.InstallService {
+	wire.Build(commonProvider)
 	return &service.InstallSvc{}
 }
 
@@ -39,25 +50,16 @@ func NewBaseModelOption() []option.Option[dao.BaseDbModel] {
 func InitWeb() *gin.Engine {
 	wire.Build(
 		//ioc.InitDB,
-		NewBaseModelOption,
-		dao.NewBaseModel,
-
+		commonProvider,
 		dao.NewExecutorDAO,
+
 		dao.NewTaskDAO,
-		dao.NewSettingDAO,
-		dao.NewUserDAO,
-
 		repository.NewExecutorRepository,
-		repository.NewTaskRepository,
-		repository.NewSettingRepository,
-		repository.NewUserRepository,
-		repository.NewWebSettingRepository,
 
+		repository.NewTaskRepository,
 		service.NewExecutorService,
 		service.NewTaskService,
 		service.NewSettingService,
-		//InitWebSettingService,
-		InitInstallService,
 
 		web.NewExecutorHandler,
 		web.NewTaskHandler,

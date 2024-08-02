@@ -38,3 +38,8 @@ type UserEditReq struct {
 	IsAdmin         uint8
 	Status          uint8
 }
+
+type LoginReq struct {
+	Username string
+	Password string
+}

@@ -4,8 +4,6 @@ import (
 	"crypto/md5"
 	crand "crypto/rand"
 	"fmt"
-	"github.com/ac-zht/super-job/admin/internal/repository"
-	"github.com/ac-zht/super-job/admin/internal/service"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -21,13 +19,6 @@ func FileExist(file string) bool {
 		return false
 	}
 	return true
-}
-
-func WorkDir() (string, error) {
-	if repository.App.Mode == service.DEV {
-		return CurrentDir()
-	}
-	return ExecDir()
 }
 
 func ExecDir() (string, error) {

@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-var App struct {
+type app struct {
 	//ConfDir 配置文件目录
 	ConfDir string
 	//Config 应用配置文件
@@ -29,6 +29,8 @@ var App struct {
 	Setting *domain.Setting
 	Mode    string
 }
+
+var App = app{Setting: &domain.Setting{}}
 
 type InstallRepository interface {
 	PingDB(setting *domain.Setting) error
@@ -90,7 +92,7 @@ func (repo *installRepository) CreateDB() *gorm.DB {
 
 func (repo *installRepository) connectDB(setting *domain.Setting) (*gorm.DB, error) {
 	engine := strings.ToLower(setting.DB.Engine)
-	var config *gorm.Config
+	config := &gorm.Config{}
 	if App.Setting.DB.Prefix != "" {
 		config.NamingStrategy = schema.NamingStrategy{
 			TablePrefix: fmt.Sprintf("%s_", setting.DB.Prefix),

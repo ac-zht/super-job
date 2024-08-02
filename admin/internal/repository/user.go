@@ -72,6 +72,7 @@ func (repo *userRepository) toEntity(u domain.User) dao.User {
 		Password: u.Password,
 		Status:   u.Status,
 		Salt:     u.Salt,
+		IsAdmin:  u.IsAdmin,
 	}
 }
 

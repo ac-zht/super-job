@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/ac-zht/super-job/admin/internal/repository/dao"
 	"github.com/ac-zht/super-job/admin/internal/service"
 	"github.com/ac-zht/super-job/admin/pkg/utils"
 	"go.uber.org/zap"
@@ -12,6 +13,7 @@ import (
 func main() {
 	initLogger()
 	initEnv()
+	initModule()
 	web := InitWeb()
 	web.Run(":9100")
 }
@@ -29,18 +31,19 @@ func initModule() {
 	if !service.App.Installed {
 		return
 	}
-	//webSettingSvc := InitWebSettingService()
-	//config, err := webSettingSvc.Read(service.App.Config)
-	//if err != nil {
-	//    zap.L().Fatal(fmt.Sprintf("initModule#read app config fail"), zap.Error(err))
-	//}
-	//service.SetAppSetting(config)
-	//dao.SetGlobalDB()
+	webSettingSvc := InitWebSettingService()
+	config, err := webSettingSvc.Read(service.App.Config)
+	if err != nil {
+		zap.L().Fatal(fmt.Sprintf("initModule#read app config fail"), zap.Error(err))
+	}
+	service.SetAppSetting(config)
+	installSvc := InitInstallService()
+	dao.SetGlobalDB(installSvc.CreateDB())
 }
 
 func initEnv() {
 	service.App.Mode = service.DEV
-	AppDir, err := utils.WorkDir()
+	AppDir, err := WorkDir()
 	if err != nil {
 		zap.L().Fatal(err.Error())
 	}
@@ -48,6 +51,13 @@ func initEnv() {
 	service.App.Config = filepath.Join(service.App.ConfDir, "/app.ini")
 	createDirIfNotExists(service.App.ConfDir)
 	service.App.Installed = IsInstalled()
+}
+
+func WorkDir() (string, error) {
+	if service.App.Mode == service.DEV {
+		return utils.CurrentDir()
+	}
+	return utils.ExecDir()
 }
 
 func IsInstalled() bool {

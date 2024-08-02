@@ -1,6 +1,7 @@
 package ioc
 
 import (
+	"github.com/ac-zht/super-job/admin/internal/repository/dao"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -12,9 +13,9 @@ func InitDB() *gorm.DB {
 	if err != nil {
 		panic(err)
 	}
-	//err = dao.InitTables(db)
-	//if err != nil {
-	//	panic(err)
-	//}
+	err = dao.InitTables(db)
+	if err != nil {
+		panic(err)
+	}
 	return db
 }

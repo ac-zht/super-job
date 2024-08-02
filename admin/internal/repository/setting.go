@@ -96,7 +96,7 @@ func (repo *settingRepository) InitBasicField(ctx context.Context) error {
 }
 
 func (repo *settingRepository) Mail(ctx context.Context) (domain.Mail, error) {
-	list, err := repo.dao.FindByKey(ctx, domain.MailCode)
+	list, err := repo.dao.FindByCode(ctx, domain.MailCode)
 	if err != nil {
 		return domain.Mail{}, err
 	}
@@ -120,7 +120,7 @@ func (repo *settingRepository) Mail(ctx context.Context) (domain.Mail, error) {
 }
 
 func (repo *settingRepository) Slack(ctx context.Context) (domain.Slack, error) {
-	list, err := repo.dao.FindByKey(ctx, domain.SlackCode)
+	list, err := repo.dao.FindByCode(ctx, domain.SlackCode)
 	if err != nil {
 		return domain.Slack{}, err
 	}
@@ -143,7 +143,7 @@ func (repo *settingRepository) Slack(ctx context.Context) (domain.Slack, error) 
 }
 
 func (repo *settingRepository) Webhook(ctx context.Context) (domain.Webhook, error) {
-	list, err := repo.dao.FindByKey(ctx, domain.WebhookCode)
+	list, err := repo.dao.FindByCode(ctx, domain.WebhookCode)
 	if err != nil {
 		return domain.Webhook{}, err
 	}

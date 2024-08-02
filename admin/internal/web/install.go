@@ -40,6 +40,7 @@ func (h *InstallHandler) Store(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: errs.InstallInternalServerError,
+			Msg:  err.Error(),
 		})
 		return
 	}
@@ -57,6 +58,6 @@ func (h *InstallHandler) Status(ctx *gin.Context) {
 
 func (h *InstallHandler) RegisterRoutes(server *gin.Engine) {
 	ug := server.Group("api/install")
-	ug.GET("/store", h.Store)
+	ug.POST("/store", h.Store)
 	ug.GET("/status", h.Status)
 }

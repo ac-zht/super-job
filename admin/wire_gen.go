@@ -14,19 +14,28 @@ import (
 	"github.com/ac-zht/super-job/admin/internal/web"
 	"github.com/ac-zht/super-job/admin/ioc"
 	"github.com/gin-gonic/gin"
+	"github.com/google/wire"
 )
 
 // Injectors from wire.go:
 
-func InitWebSettingService(repo repository.WebSettingRepository) service.WebSettingService {
-	webSettingService := service.NewWebSettingService(repo)
+func InitWebSettingService() service.WebSettingService {
+	webSettingRepository := repository.NewWebSettingRepository()
+	webSettingService := service.NewWebSettingService(webSettingRepository)
 	return webSettingService
 }
 
-func InitInstallService(base dao.BaseModel, setRepo repository.SettingRepository, webSettingRepo repository.WebSettingRepository, userRepo repository.UserRepository) service.InstallService {
-	installDAO := dao.NewInstallDAO(base)
+func InitInstallService() service.InstallService {
+	v := NewBaseModelOption()
+	baseModel := dao.NewBaseModel(v...)
+	settingDAO := dao.NewSettingDAO(baseModel)
+	settingRepository := repository.NewSettingRepository(settingDAO)
+	installDAO := dao.NewInstallDAO(baseModel)
 	installRepository := repository.NewInstallRepository(installDAO)
-	installService := service.NewInstallService(setRepo, installRepository, webSettingRepo, userRepo)
+	webSettingRepository := repository.NewWebSettingRepository()
+	userDAO := dao.NewUserDAO(baseModel)
+	userRepository := repository.NewUserRepository(userDAO)
+	installService := service.NewInstallService(settingRepository, installRepository, webSettingRepository, userRepository)
 	return installService
 }
 
@@ -45,16 +54,22 @@ func InitWeb() *gin.Engine {
 	settingRepository := repository.NewSettingRepository(settingDAO)
 	settingService := service.NewSettingService(settingRepository)
 	settingHandler := web.NewSettingHandler(settingService)
+	installDAO := dao.NewInstallDAO(baseModel)
+	installRepository := repository.NewInstallRepository(installDAO)
 	webSettingRepository := repository.NewWebSettingRepository()
 	userDAO := dao.NewUserDAO(baseModel)
 	userRepository := repository.NewUserRepository(userDAO)
-	installService := InitInstallService(baseModel, settingRepository, webSettingRepository, userRepository)
+	installService := service.NewInstallService(settingRepository, installRepository, webSettingRepository, userRepository)
 	installHandler := web.NewInstallHandler(installService)
 	engine := ioc.InitWebServer(taskHandler, executorHandler, settingHandler, installHandler)
 	return engine
 }
 
 // wire.go:
+
+var commonProvider = wire.NewSet(
+	NewBaseModelOption, dao.NewBaseModel, dao.NewSettingDAO, dao.NewUserDAO, dao.NewInstallDAO, repository.NewSettingRepository, repository.NewUserRepository, repository.NewInstallRepository, repository.NewWebSettingRepository, service.NewInstallService,
+)
 
 func NewBaseModelOption() []option.Option[dao.BaseDbModel] {
 	return []option.Option[dao.BaseDbModel]{func(m *dao.BaseDbModel) {}}

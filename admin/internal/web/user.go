@@ -120,6 +120,20 @@ func (h *UserHandler) Delete(ctx *gin.Context) {
 	return
 }
 
+func (h *UserHandler) Login(ctx *gin.Context) {
+	var req LoginReq
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+	if req.Username == "" || req.Password == "" {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: errs.UserInvalidInput,
+			Msg:  "系统异常",
+		})
+		return
+	}
+}
+
 func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
 	ug := server.Group("/api/task")
 	ug.GET("", h.List)
