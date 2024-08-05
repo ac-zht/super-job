@@ -1,9 +1,11 @@
 package middleware
 
 import (
+	"errors"
 	"github.com/ac-zht/super-job/admin/internal/service"
 	"github.com/ecodeclub/ekit/set"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 )
 
 type LoginJWTMiddlewareBuilder struct {
@@ -25,6 +27,20 @@ func (m *LoginJWTMiddlewareBuilder) RestoreToken(ctx *gin.Context) error {
 	if authToken == "" {
 		return nil
 	}
+	token, err := jwt.Parse(authToken, func(token *jwt.Token) (interface{}, error) {
+		return []byte(service.App.Setting.AuthSecret), nil
+	})
+	if err != nil {
+		return err
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return errors.New("invalid claims")
+	}
+	ctx.Set("uid", int(claims["uid"].(float64)))
+	ctx.Set("username", claims["username"])
+	ctx.Set("is_admin", int(claims["is_admin"].(float64)))
+	return nil
 }
 
 func (m *LoginJWTMiddlewareBuilder) Build() gin.HandlerFunc {
@@ -32,7 +48,7 @@ func (m *LoginJWTMiddlewareBuilder) Build() gin.HandlerFunc {
 		if !service.App.Installed {
 			return
 		}
-
+		m.RestoreToken(ctx)
 		if m.publicPaths.Exist(ctx.Request.URL.Path) {
 			return
 		}
