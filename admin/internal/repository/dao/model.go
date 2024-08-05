@@ -10,6 +10,8 @@ const (
 	DbMaxLifeTime = time.Hour * 2
 )
 
+type CommonMap map[string]interface{}
+
 var Db *gorm.DB
 
 type BaseModel interface {

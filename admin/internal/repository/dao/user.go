@@ -8,6 +8,7 @@ import (
 type UserDAO interface {
 	List(ctx context.Context, offset, limit int) ([]User, error)
 	GetById(ctx context.Context, id int64) (User, error)
+	GetEnableUserByEmailOrName(ctx context.Context, username string) (User, error)
 	Insert(ctx context.Context, u User) (int64, error)
 	Update(ctx context.Context, u User) error
 	Delete(ctx context.Context, id int64) error
@@ -35,6 +36,12 @@ func (dao *GORMUserDAO) List(ctx context.Context, offset, limit int) ([]User, er
 func (dao *GORMUserDAO) GetById(ctx context.Context, id int64) (User, error) {
 	var u User
 	err := dao.DB().WithContext(ctx).First(&u, id).Error
+	return u, err
+}
+
+func (dao *GORMUserDAO) GetEnableUserByEmailOrName(ctx context.Context, username string) (User, error) {
+	var u User
+	err := dao.DB().WithContext(ctx).Where("(name = ? OR email = ?) AND status = ?", username, username, Enabled).Find(&u).Error
 	return u, err
 }
 

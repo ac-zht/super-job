@@ -128,10 +128,28 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	if req.Username == "" || req.Password == "" {
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: errs.UserInvalidInput,
-			Msg:  "系统异常",
+			Msg:  "用户名或密码不能为空",
 		})
 		return
 	}
+	user, err := h.svc.ValidateLogin(ctx, req.Username, req.Password)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: errs.UserInternalServerError,
+			Msg:  err.Error(),
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, ginx.Result{
+		Msg: "登录成功",
+		Data: LoginResp{
+			Token:    user.Token,
+			Uid:      user.Id,
+			Username: user.Name,
+			IsAdmin:  user.IsAdmin,
+		},
+	})
+	return
 }
 
 func (h *UserHandler) RegisterRoutes(server *gin.Engine) {

@@ -16,3 +16,11 @@ func InitWebServer(taskHandler *web.TaskHandler,
 	installHandler.RegisterRoutes(server)
 	return server
 }
+
+func InitMiddlewares() []gin.HandlerFunc {
+	return []gin.HandlerFunc{}
+}
+
+func userAuthHdl() {
+
+}

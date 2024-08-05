@@ -11,6 +11,7 @@ import (
 type UserRepository interface {
 	List(ctx context.Context, offset, limit int) ([]domain.User, error)
 	GetById(ctx context.Context, id int64) (domain.User, error)
+	MatchByUsernameAndPassword(ctx context.Context, username, password string) (domain.User, bool)
 	Create(ctx context.Context, j domain.User) (int64, error)
 	Update(ctx context.Context, task domain.User) error
 	Delete(ctx context.Context, id int64) error
@@ -39,6 +40,15 @@ func (repo *userRepository) List(ctx context.Context, offset, limit int) ([]doma
 func (repo *userRepository) GetById(ctx context.Context, id int64) (domain.User, error) {
 	user, err := repo.dao.GetById(ctx, id)
 	return repo.toDomain(user), err
+}
+
+func (repo *userRepository) MatchByUsernameAndPassword(ctx context.Context, username, password string) (domain.User, bool) {
+	user, err := repo.dao.GetEnableUserByEmailOrName(ctx, username)
+	if err != nil {
+		return domain.User{}, false
+	}
+	hashPassword := repo.encryptPassword(password, user.Salt)
+	return repo.toDomain(user), user.Password == hashPassword
 }
 
 func (repo *userRepository) Create(ctx context.Context, u domain.User) (int64, error) {
