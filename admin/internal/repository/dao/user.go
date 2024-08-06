@@ -2,11 +2,16 @@ package dao
 
 import (
 	"context"
+	"errors"
+	"github.com/go-sql-driver/mysql"
 	"time"
 )
 
+var ErrUserDuplicate = errors.New("username or email duplicate")
+
 type UserDAO interface {
 	List(ctx context.Context, offset, limit int) ([]User, error)
+	Count(ctx context.Context) (int64, error)
 	GetById(ctx context.Context, id int64) (User, error)
 	GetEnableUserByEmailOrName(ctx context.Context, username string) (User, error)
 	Insert(ctx context.Context, u User) (int64, error)
@@ -33,6 +38,12 @@ func (dao *GORMUserDAO) List(ctx context.Context, offset, limit int) ([]User, er
 	return users, err
 }
 
+func (dao *GORMUserDAO) Count(ctx context.Context) (int64, error) {
+	var cnt int64
+	err := dao.DB().WithContext(ctx).Model(&User{}).Count(&cnt).Error
+	return cnt, err
+}
+
 func (dao *GORMUserDAO) GetById(ctx context.Context, id int64) (User, error) {
 	var u User
 	err := dao.DB().WithContext(ctx).First(&u, id).Error
@@ -50,12 +61,26 @@ func (dao *GORMUserDAO) Insert(ctx context.Context, u User) (int64, error) {
 	u.Ctime = now
 	u.Utime = now
 	err := dao.DB().WithContext(ctx).Create(&u).Error
+	if me, ok := err.(*mysql.MySQLError); ok {
+		const uniqueIndexErrNo uint16 = 1062
+		if me.Number == uniqueIndexErrNo {
+			return 0, ErrUserDuplicate
+		}
+	}
 	return u.Id, err
 }
 
 func (dao *GORMUserDAO) Update(ctx context.Context, u User) error {
 	u.Utime = time.Now().UnixMilli()
-	return dao.DB().WithContext(ctx).Updates(&u).Error
+	//不更新零值
+	err := dao.DB().WithContext(ctx).Updates(&u).Error
+	if me, ok := err.(*mysql.MySQLError); ok {
+		const uniqueIndexErrNo uint16 = 1062
+		if me.Number == uniqueIndexErrNo {
+			return ErrUserDuplicate
+		}
+	}
+	return err
 }
 
 func (dao *GORMUserDAO) Delete(ctx context.Context, id int64) error {

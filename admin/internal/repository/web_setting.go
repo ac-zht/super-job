@@ -44,9 +44,13 @@ func (w *webSettingRepository) Read(fn string) (*domain.Setting, error) {
 	s.ApiKey = section.Key("api.key").MustString("")
 	s.ApiSecret = section.Key("api.secret").MustString("")
 	s.ApiSignEnable = section.Key("api.sign.enable").MustBool(true)
-	s.AuthSecret = section.Key("auth_secret").MustString("")
-	if s.AuthSecret == "" {
-		s.AuthSecret = utils.RandAuthToken()
+	s.AccessTokenKey = section.Key("access_token_key").MustString("")
+	if s.AccessTokenKey == "" {
+		s.AccessTokenKey = utils.RandAuthToken()
+	}
+	s.RefreshTokenKey = section.Key("refresh_token_key").MustString("")
+	if s.RefreshTokenKey == "" {
+		s.RefreshTokenKey = utils.RandAuthToken()
 	}
 	s.EnableTLS = section.Key("enable_tls").MustBool(false)
 	s.CAFile = section.Key("ca_file").MustString("")

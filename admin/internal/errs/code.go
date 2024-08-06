@@ -15,6 +15,7 @@ const (
 	InstallOccurred             = 13001
 	InstallPasswordInconsistent = 13002
 
-	UserInternalServerError = 14000
-	UserInvalidInput        = 14001
+	UserInternalServerError      = 14000
+	UserInvalidInput             = 14001
+	UserDuplicateUsernameOrEmail = 14002
 )

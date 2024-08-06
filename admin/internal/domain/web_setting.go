@@ -40,5 +40,6 @@ type Setting struct {
 	CertFile  string
 	KeyFile   string
 
-	AuthSecret string
+	AccessTokenKey  string
+	RefreshTokenKey string
 }

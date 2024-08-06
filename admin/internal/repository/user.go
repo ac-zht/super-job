@@ -8,8 +8,11 @@ import (
 	"github.com/ecodeclub/ekit/slice"
 )
 
+var ErrUserDuplicate = dao.ErrUserDuplicate
+
 type UserRepository interface {
 	List(ctx context.Context, offset, limit int) ([]domain.User, error)
+	Count(ctx context.Context) (int64, error)
 	GetById(ctx context.Context, id int64) (domain.User, error)
 	MatchByUsernameAndPassword(ctx context.Context, username, password string) (domain.User, bool)
 	Create(ctx context.Context, j domain.User) (int64, error)
@@ -35,6 +38,10 @@ func (repo *userRepository) List(ctx context.Context, offset, limit int) ([]doma
 	return slice.Map[dao.User, domain.User](users, func(idx int, src dao.User) domain.User {
 		return repo.toDomain(src)
 	}), nil
+}
+
+func (repo *userRepository) Count(ctx context.Context) (int64, error) {
+	return repo.dao.Count(ctx)
 }
 
 func (repo *userRepository) GetById(ctx context.Context, id int64) (domain.User, error) {

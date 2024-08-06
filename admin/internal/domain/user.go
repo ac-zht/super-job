@@ -2,7 +2,10 @@ package domain
 
 import "time"
 
-const TokenDuration = time.Hour * 4
+const (
+	TokenDuration        = time.Hour * 4
+	RefreshTokenDuration = time.Hour * 24 * 5
+)
 
 type User struct {
 	Id       int64
@@ -12,7 +15,7 @@ type User struct {
 	IsAdmin  uint8
 	Status   uint8
 	Salt     string
-	Token    string
+	//Token    string
 }
 
 type LoginLog struct {

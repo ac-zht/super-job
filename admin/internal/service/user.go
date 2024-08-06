@@ -7,12 +7,13 @@ import (
 	"github.com/ac-zht/super-job/admin/internal/domain"
 	"github.com/ac-zht/super-job/admin/internal/repository"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
-	"time"
 )
+
+var ErrUserDuplicate = repository.ErrUserDuplicate
 
 type UserService interface {
 	List(ctx context.Context, offset, limit int) ([]domain.User, error)
+	Count(ctx context.Context) (int64, error)
 	GetById(ctx context.Context, id int64) (domain.User, error)
 	ValidateLogin(ctx *gin.Context, username, password string) (domain.User, error)
 	Save(ctx context.Context, u domain.User) (int64, error)
@@ -35,6 +36,10 @@ func (svc *userService) List(ctx context.Context, offset, limit int) ([]domain.U
 	return svc.userRepo.List(ctx, offset, limit)
 }
 
+func (svc *userService) Count(ctx context.Context) (int64, error) {
+	return svc.userRepo.Count(ctx)
+}
+
 func (svc *userService) GetById(ctx context.Context, id int64) (domain.User, error) {
 	return svc.userRepo.GetById(ctx, id)
 }
@@ -51,25 +56,7 @@ func (svc *userService) ValidateLogin(ctx *gin.Context, username, password strin
 	if err != nil {
 		return domain.User{}, errors.New(fmt.Sprintf("记录用户登录日志失败#%v", err))
 	}
-	token, err := svc.generateToken(user)
-	if err != nil {
-		return user, errors.New(fmt.Sprintf("生成jwt失败#%v", err))
-	}
-	user.Token = token
 	return user, nil
-}
-
-func (svc *userService) generateToken(user domain.User) (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := make(jwt.MapClaims)
-	claims["exp"] = time.Now().Add(domain.TokenDuration).Unix()
-	claims["uid"] = user.Id
-	claims["iat"] = time.Now().Unix()
-	claims["issuer"] = "super-job"
-	claims["username"] = user.Name
-	claims["is_admin"] = user.IsAdmin
-	token.Claims = claims
-	return token.SignedString([]byte(App.Setting.AuthSecret))
 }
 
 func (svc *userService) Save(ctx context.Context, u domain.User) (int64, error) {

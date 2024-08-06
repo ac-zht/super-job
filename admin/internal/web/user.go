@@ -4,6 +4,7 @@ import (
 	"github.com/ac-zht/super-job/admin/internal/domain"
 	"github.com/ac-zht/super-job/admin/internal/errs"
 	"github.com/ac-zht/super-job/admin/internal/service"
+	"github.com/ac-zht/super-job/admin/internal/web/jwt"
 	"github.com/ac-zht/super-job/admin/pkg/ginx"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -12,11 +13,13 @@ import (
 
 type UserHandler struct {
 	svc service.UserService
+	jwt.Handler
 }
 
-func NewUserHandler(svc service.UserService) *UserHandler {
+func NewUserHandler(svc service.UserService, jwtHdl jwt.Handler) *UserHandler {
 	return &UserHandler{
-		svc: svc,
+		svc:     svc,
+		Handler: jwtHdl,
 	}
 }
 
@@ -35,8 +38,16 @@ func (h *UserHandler) List(ctx *gin.Context) {
 		})
 		return
 	}
+	total, err := h.svc.Count(ctx)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: errs.UserInternalServerError,
+			Msg:  "系统异常",
+		})
+		return
+	}
 	data := map[string]interface{}{
-		"total": 1,
+		"total": total,
 		"tasks": users,
 	}
 	ctx.JSON(http.StatusOK, ginx.Result{
@@ -50,6 +61,29 @@ func (h *UserHandler) Save(ctx *gin.Context) {
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
+	if req.Name == "" || req.Email == "" {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: errs.UserInvalidInput,
+			Msg:  "用户名或邮箱不能为空",
+		})
+		return
+	}
+	if req.Id == 0 {
+		if req.Password == "" {
+			ctx.JSON(http.StatusOK, ginx.Result{
+				Code: errs.UserInvalidInput,
+				Msg:  "请输入密码",
+			})
+			return
+		}
+		if req.Password != req.ConfirmPassword {
+			ctx.JSON(http.StatusOK, ginx.Result{
+				Code: errs.UserInvalidInput,
+				Msg:  "两次密码输入不一致",
+			})
+			return
+		}
+	}
 	id, err := h.svc.Save(ctx, domain.User{
 		Id:       req.Id,
 		Name:     req.Name,
@@ -59,6 +93,13 @@ func (h *UserHandler) Save(ctx *gin.Context) {
 		Status:   req.Status,
 	})
 	if err != nil {
+		if err == service.ErrUserDuplicate {
+			ctx.JSON(http.StatusOK, ginx.Result{
+				Code: errs.UserDuplicateUsernameOrEmail,
+				Msg:  "用户名或邮箱冲突",
+			})
+			return
+		}
 		ctx.JSON(http.StatusOK, ginx.Result{
 			Code: errs.UserInternalServerError,
 			Msg:  "系统异常",
@@ -66,7 +107,7 @@ func (h *UserHandler) Save(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, ginx.Result{
-		Msg:  "新增成功",
+		Msg:  "成功",
 		Data: id,
 	})
 	return
@@ -140,10 +181,18 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		})
 		return
 	}
+
+	err = h.SetLoginToken(ctx, user)
+	if err != nil {
+		ctx.JSON(http.StatusOK, ginx.Result{
+			Code: errs.UserInternalServerError,
+			Msg:  "系统异常",
+		})
+		return
+	}
 	ctx.JSON(http.StatusOK, ginx.Result{
 		Msg: "登录成功",
 		Data: LoginResp{
-			Token:    user.Token,
 			Uid:      user.Id,
 			Username: user.Name,
 			IsAdmin:  user.IsAdmin,
@@ -152,10 +201,31 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	return
 }
 
+func (h *UserHandler) Enable(ctx *gin.Context) {
+
+}
+
+func (h *UserHandler) Disable(ctx *gin.Context) {
+
+}
+
+func (h *UserHandler) UpdateMyPassword(ctx *gin.Context) {
+
+}
+
+func (h *UserHandler) UpdatePassword(ctx *gin.Context) {
+
+}
+
 func (h *UserHandler) RegisterRoutes(server *gin.Engine) {
-	ug := server.Group("/api/task")
+	ug := server.Group("/api/user")
 	ug.GET("", h.List)
 	ug.GET("/:id", h.Detail)
 	ug.POST("/save", h.Save)
-	ug.POST("/delete/:id", h.Delete)
+	ug.POST("/remove/:id", h.Delete)
+	ug.POST("/login", h.Login)
+	ug.POST("/enable/:id", h.Enable)
+	ug.POST("/disable/:id", h.Disable)
+	ug.POST("/editMyPassword", h.UpdateMyPassword)
+	ug.POST("/editPassword/:id", h.UpdatePassword)
 }

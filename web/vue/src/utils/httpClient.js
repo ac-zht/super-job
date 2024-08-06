@@ -15,7 +15,7 @@ axios.defaults.baseURL = 'api'
 axios.defaults.timeout = 10000
 axios.defaults.responseType = 'json'
 axios.interceptors.request.use(config => {
-  config.headers['Auth-Token'] = store.getters.user.token
+  config.headers['Authorization'] = "Bearer " + store.getters.user.token
   return config
 }, error => {
   Message.error({
@@ -35,12 +35,12 @@ axios.interceptors.response.use(data => {
   return Promise.reject(error)
 })
 
-function handle (promise, next) {
+function handle(promise, next) {
   promise.then((res) => successCallback(res, next))
     .catch((error) => failureCallback(error))
 }
 
-function checkResponseCode (code, msg) {
+function checkResponseCode(code, msg) {
   switch (code) {
     // 应用未安装
     case APP_NOT_INSTALL_CODE:
@@ -61,29 +61,29 @@ function checkResponseCode (code, msg) {
   return true
 }
 
-function successCallback (res, next) {
+function successCallback(res, next) {
   if (!checkResponseCode(res.data.code, res.data.message)) {
     return
   }
   if (!next) {
     return
   }
-  next(res.data.data, res.data.code, res.data.message)
+  next(res.data.data, res.data.code, res.data.message, res.headers)
 }
 
-function failureCallback (error) {
+function failureCallback(error) {
   Message.error({
     message: '请求失败 - ' + error
   })
 }
 
 export default {
-  get (uri, params, next) {
+  get(uri, params, next) {
     const promise = axios.get(uri, {params})
     handle(promise, next)
   },
 
-  batchGet (uriGroup, next) {
+  batchGet(uriGroup, next) {
     const requests = []
     for (let item of uriGroup) {
       let params = {}
@@ -105,7 +105,7 @@ export default {
     })).catch((error) => failureCallback(error))
   },
 
-  post (uri, data, next) {
+  post(uri, data, next) {
     const promise = axios.post(uri, JSON.stringify(data), {
       headers: {
         post: {
